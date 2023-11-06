@@ -1,23 +1,3 @@
-// src/browser/element.js
-var attachCopper = function(element) {
-  Object.defineProperty(element, "_copper", {
-    value: {
-      watchers: new Set
-    },
-    writable: false,
-    configurable: false
-  });
-};
-function el(tag) {
-  const element = document.createElement(tag);
-  attachCopper(element);
-  return element;
-}
-function text(text2) {
-  const text_node = document.createTextNode(text2);
-  attachCopper(text_node);
-  return text_node;
-}
 // /Users/daniil/Development/Public/copper/node_modules/.pnpm/@vue+runtime-dom@3.3.7/node_modules/@vue/shared/dist/shared.esm-bundler.js
 var makeMap = function(str, expectsLowerCase) {
   const map = Object.create(null);
@@ -33,8 +13,8 @@ var NOOP = () => {
 };
 var NO = () => false;
 var extend = Object.assign;
-var remove = (arr, el2) => {
-  const i = arr.indexOf(el2);
+var remove = (arr, el) => {
+  const i = arr.indexOf(el);
   if (i > -1) {
     arr.splice(i, 1);
   }
@@ -2177,6 +2157,61 @@ if (true) {
   initDev();
 }
 
+// src/browser/copper-state.js
+class CopperState {
+  element;
+  watchers = new Set;
+  constructor(element) {
+    this.element = element;
+  }
+  watch(...args) {
+    const unwatch = watch(...args);
+    this.watchers.add(unwatch);
+    return unwatch;
+  }
+  listen(...args) {
+    this.element.addEventListener(...args);
+    const removeListener = () => {
+      this.element.removeEventListener(...args);
+    };
+    this.watchers.add(removeListener);
+    return removeListener;
+  }
+  destroy() {
+    for (const watcher of this.watchers) {
+      watcher();
+    }
+    this.watchers.clear();
+    for (const child of this.element.childNodes) {
+      child._copper?.destroy();
+    }
+    delete this.element._copper;
+    this.element = null;
+  }
+}
+
+// src/browser/element.js
+var attachCopper = function(element) {
+  element._copper = new CopperState(element);
+};
+function el(tag) {
+  const element = document.createElement(tag);
+  attachCopper(element);
+  return element;
+}
+function text(text2 = "") {
+  const text_node = document.createTextNode(text2);
+  attachCopper(text_node);
+  return text_node;
+}
+function fragment() {
+  return document.createDocumentFragment();
+}
+function comment(text2 = "") {
+  const element = document.createComment(text2);
+  attachCopper(element);
+  return element;
+}
 // src/data/boolean-attributes.js
 var BOOLEAN_ATTRIBUTES = new Set([
   "allowfullscreen",
@@ -2207,6 +2242,11 @@ var BOOLEAN_ATTRIBUTES = new Set([
   "shadowrootdelegatesfocus"
 ]);
 
+// src/utils.js
+function isPlainObject2(value) {
+  return typeof value === "object" && value !== null && value.constructor === Object;
+}
+
 // src/browser/utils.js
 function extractValue(source) {
   if (isRef(source)) {
@@ -2216,59 +2256,223 @@ function extractValue(source) {
 }
 
 // src/browser/attributes.js
-function attr(element, key, value) {
-  if (BOOLEAN_ATTRIBUTES.has(key)) {
-    if (value === false || value === null || value === undefined) {
-      element.removeAttribute(key);
-    } else {
-      element.setAttribute(key, "");
+var convertClasses = function(value) {
+  const classes = new Set;
+  if (typeof value === "string") {
+    for (const class_name of value.split(" ")) {
+      classes.add(class_name);
     }
-  } else if (value === null || value === undefined) {
-    element.removeAttribute(key);
-  } else {
+  } else if (isPlainObject2(value)) {
+    for (const [key, is_active] of Object.entries(value)) {
+      if (is_active) {
+        classes.add(key);
+      }
+    }
+  } else if (Array.isArray(value)) {
+    for (const item of value) {
+      classes.add(item);
+    }
+  }
+  return classes;
+};
+function attr(element, key, value, value_old) {
+  if (BOOLEAN_ATTRIBUTES.has(key)) {
+    if (value) {
+      element.setAttribute(key, "");
+    } else {
+      element.removeAttribute(key);
+    }
+  } else if (key === "class") {
+    const class_names_before = convertClasses(value_old);
+    for (const class_name of convertClasses(value)) {
+      element.classList.add(class_name);
+      class_names_before.delete(class_name);
+    }
+    for (const class_name of class_names_before) {
+      element.classList.remove(class_name);
+    }
+  } else if (value) {
     element.setAttribute(key, value);
+  } else {
+    element.removeAttribute(key);
   }
 }
 function reactiveAttr(element, key, watcher) {
-  element._copper.watchers.add(watch(watcher, (value) => {
-    attr(element, key, extractValue(value));
+  element._copper.watch(watcher, (value, value_old) => {
+    attr(element, key, extractValue(value), extractValue(value_old));
   }, {
     deep: true,
     immediate: true
-  }));
+  });
+}
+// src/browser/reactive/if.js
+var getNewElements = function(getter, element_placeholder) {
+  let element_to_insert = element_placeholder;
+  let elements_new = [];
+  if (typeof getter === "function") {
+    elements_new = getter();
+  }
+  if (elements_new.length === 0) {
+    elements_new.push(element_placeholder);
+  } else {
+    element_to_insert = fragment();
+    element_to_insert.append(...elements_new);
+  }
+  return [
+    element_to_insert,
+    elements_new
+  ];
+};
+function reactiveIf(watcher, outcomes) {
+  const element_placeholder = comment();
+  const copperState = element_placeholder._copper;
+  const elements_active = [element_placeholder];
+  copperState.watchers.add(() => {
+    for (const element2 of elements_active) {
+      element2.remove();
+      element2._copper?.destroy();
+    }
+    elements_active.length = 0;
+  });
+  setTimeout(() => {
+    copperState.watch(watcher, (outcome_index) => {
+      const [
+        element_to_insert,
+        elements_new
+      ] = getNewElements(outcomes[outcome_index], element_placeholder);
+      while (elements_active.length > 0) {
+        const element_remove = elements_active.pop();
+        if (elements_active.length === 0) {
+          element_remove.replaceWith(element_to_insert);
+        } else {
+          element_remove.remove();
+        }
+        if (element_remove !== element_placeholder) {
+          element_remove._copper?.destroy();
+        }
+      }
+      elements_active.push(...elements_new);
+    }, {
+      immediate: true
+    });
+  });
+  return element_placeholder;
+}
+// src/browser/reactive/for.js
+var getKVIterator = function(value) {
+  if (isPlainObject2(value)) {
+    return Object.entries(value);
+  }
+  if (Array.isArray(value) || value instanceof Map || value instanceof Set) {
+    return value.entries();
+  }
+  if (typeof value === "number") {
+    const array = [];
+    for (let index = 0;index < value; index++) {
+      array.push([
+        index,
+        index
+      ]);
+    }
+    return array;
+  }
+  throw new TypeError("Cannot iterate over value");
+};
+function reactiveFor(watcher, getter_key, getter) {
+  const element_placeholder = comment();
+  const copperState = element_placeholder._copper;
+  let first_element_active = element_placeholder;
+  const elements_active = new Map;
+  const has_cache_key_getter = typeof getter_key === "function";
+  setTimeout(() => {
+    copperState.watch(watcher, (value) => {
+      const cache_keys_active = new Set(elements_active.keys());
+      if (first_element_active !== element_placeholder) {
+        first_element_active.parentNode.insertBefore(element_placeholder, first_element_active);
+      }
+      const element_fragment = fragment();
+      for (const [inner_key, inner_value] of getKVIterator(value)) {
+        const cache_key = has_cache_key_getter ? getter_key(inner_value, inner_key) : Symbol("");
+        cache_keys_active.delete(cache_key);
+        let ref_key;
+        let ref_value;
+        let elements;
+        if (elements_active.has(cache_key)) {
+          ({
+            ref_key,
+            ref_value,
+            elements
+          } = elements_active.get(cache_key));
+          ref_key.value = inner_key;
+          ref_value.value = inner_value;
+        } else {
+          ref_key = ref(inner_key);
+          ref_value = ref(inner_value);
+          elements = getter(ref_value, ref_key);
+        }
+        if (elements.length === 0) {
+          continue;
+        }
+        element_fragment.append(...elements);
+        elements_active.set(cache_key, {
+          ref_key,
+          ref_value,
+          elements
+        });
+      }
+      for (const cache_key of cache_keys_active) {
+        const { elements } = elements_active.get(cache_key);
+        for (const element3 of elements) {
+          element3.remove();
+          element3._copper?.destroy();
+        }
+        elements_active.delete(cache_key);
+      }
+      if (element_fragment.childNodes.length === 0) {
+        first_element_active = element_placeholder;
+      } else {
+        first_element_active = element_fragment.firstChild;
+        element_placeholder.replaceWith(element_fragment);
+      }
+    }, {
+      deep: true,
+      immediate: true
+    });
+  });
+  copperState.watchers.add(() => {
+    for (const { elements } of elements_active.values()) {
+      for (const element3 of elements) {
+        element3.remove();
+        element3._copper?.destroy();
+      }
+    }
+    elements_active.clear();
+  });
+  return element_placeholder;
 }
 // src/browser/reactive/input-value.js
-function reactiveInputValue(element, watcher) {
-  element._copper.watchers.add(watch(watcher, (value) => {
-    element.value = extractValue(value);
+function reactiveInputValue(element3, watcher) {
+  element3._copper.watch(watcher, (value) => {
+    element3.value = extractValue(value);
   }, {
     deep: true,
     immediate: true
-  }));
-  {
-    const args = [
-      "input",
-      () => {
-        watcher().value = element.value;
-      }
-    ];
-    element.addEventListener(...args);
-    element._copper.watchers.add(() => {
-      element.removeEventListener(...args);
-    });
-  }
+  });
+  element3._copper.listen("input", () => {
+    watcher().value = element3.value;
+  });
 }
 // src/browser/reactive/text-node.js
-function reactiveTextNode(element, watcher) {
-  element._copper.watchers.add(watch(watcher, (value) => {
-    element.textContent = String(extractValue(value));
+function reactiveTextNode(element3, watcher) {
+  element3._copper.watch(watcher, (value) => {
+    element3.textContent = String(extractValue(value));
   }, {
     deep: true,
     immediate: true
-  }));
+  });
 }
 // src/browser/listen.js
-function listen(element, event_name, callback, modifiers) {
+function listen(element3, event_name, callback, modifiers) {
   modifiers = new Set(modifiers);
   const options = {};
   if (modifiers.has("once")) {
@@ -2307,9 +2511,9 @@ function listen(element, event_name, callback, modifiers) {
   if (Object.keys(options).length > 0) {
     args.push(options);
   }
-  element.addEventListener(...args);
-  element._copper.watchers.add(() => {
-    element.removeEventListener(...args);
+  element3.addEventListener(...args);
+  element3._copper.watchers.add(() => {
+    element3.removeEventListener(...args);
   });
 }
 export {
@@ -2318,9 +2522,12 @@ export {
   ref,
   reactiveTextNode,
   reactiveInputValue,
+  reactiveIf,
+  reactiveFor,
   reactiveAttr,
   reactive,
   listen,
+  fragment,
   el,
   attr
 };

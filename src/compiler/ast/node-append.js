@@ -1,5 +1,5 @@
 
-export function getAstNodeAppend(variable_element, variable_target) {
+export function getAstNodesAppend(variable_target, variables_source) {
 	return {
 		type: 'ExpressionStatement',
 		expression: {
@@ -15,10 +15,10 @@ export function getAstNodeAppend(variable_element, variable_target) {
 					name: 'append',
 				},
 			},
-			arguments: [{
+			arguments: variables_source.map((variable) => ({
 				type: 'Identifier',
-				name: variable_element,
-			}],
+				name: variable,
+			})),
 		},
 	};
 }

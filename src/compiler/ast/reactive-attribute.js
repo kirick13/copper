@@ -1,5 +1,5 @@
 
-import { parse } from 'acorn';
+import { parseRawJsExpression } from '../utils.js';
 
 export function getAstReactiveAttribute(element_variable, attribute_name, /* attribute_modifiers, */ attribute_expression) {
 	return {
@@ -28,12 +28,7 @@ export function getAstReactiveAttribute(element_variable, attribute_name, /* att
 				type: 'ArrowFunctionExpression',
 				expression: true,
 				params: [],
-				body: parse(
-					attribute_expression,
-					{
-						ecmaVersion: 'latest',
-					},
-				).body[0].expression,
+				body: parseRawJsExpression(attribute_expression),
 			},
 		],
 	};

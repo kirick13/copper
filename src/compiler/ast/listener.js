@@ -20,7 +20,10 @@ export function getAstListener(element_variable, attribute_name, attribute_expre
 			{
 				type: 'ArrowFunctionExpression',
 				expression: true,
-				params: [],
+				params: [{
+					type: 'Identifier',
+					name: '$event',
+				}],
 				body: parse(
 					attribute_expression,
 					{

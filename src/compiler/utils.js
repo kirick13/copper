@@ -1,0 +1,77 @@
+
+import { parse } from 'acorn';
+
+export function createVariableName() {
+	return `_${Math.random().toString(36).slice(2, 11)}`;
+}
+
+export function parseAttribute(attribute_raw) {
+	const is_bind = attribute_raw.startsWith(':');
+	const is_event = attribute_raw.startsWith('@');
+
+	if (is_bind || is_event) {
+		const [ attribute, ...modifiers ] = attribute_raw.slice(1).split('.');
+		return {
+			is_bind,
+			is_event,
+			attribute,
+			modifiers,
+		};
+	}
+
+	return {
+		is_bind,
+		is_event,
+		attribute: attribute_raw,
+	};
+}
+
+export function parseMustache(value) {
+	let offset = 0;
+	const parts = [];
+
+	while (offset < value.length) {
+		const index_start = value.indexOf('{{', offset);
+		if (index_start === -1) {
+			break;
+		}
+
+		parts.push({
+			text: value.slice(offset, index_start),
+		});
+
+		const index_end = value.indexOf('}}', index_start);
+		if (index_end === -1) {
+			throw new Error('Invalid mustache syntax found.');
+		}
+
+		const expression = value.slice(index_start + 2, index_end).trim();
+		if (expression.length === 0) {
+			throw new Error('Invalid mustache syntax found.');
+		}
+
+		parts.push({ expression });
+
+		offset = index_end + 2;
+	}
+
+	{
+		const text = value.slice(offset);
+		if (text.length > 0) {
+			parts.push({ text });
+		}
+	}
+
+	// console.log(parts);
+
+	return parts;
+}
+
+export function parseRawJsExpression(rawjs_code) {
+	return parse(
+		rawjs_code,
+		{
+			ecmaVersion: 'latest',
+		},
+	).body[0].expression;
+}
