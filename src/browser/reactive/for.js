@@ -132,7 +132,7 @@ export function reactiveFor(watcher, getter_key, getter) {
 		);
 	});
 
-	copperState.watchers.add(() => {
+	copperState.addWatcher(() => {
 		for (const { elements } of elements_active.values()) {
 			for (const element of elements) {
 				element.remove();

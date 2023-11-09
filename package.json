@@ -21,7 +21,10 @@
 		"eslint-plugin-unicorn": "47.0.0"
 	},
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"build": "bun run build-esm",
+		"build-esm": "bun run build-esm-full && bun run build-esm-minified",
+		"build-esm-full": "bun build --outfile dist/copper.esm.js --target browser src/main.js",
+		"build-esm-minified": "bun build --outfile dist/copper.esm.min.js --target browser --minify src/main.js"
 	},
 	"repository": {
 		"type": "git",

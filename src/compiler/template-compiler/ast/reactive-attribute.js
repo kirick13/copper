@@ -1,5 +1,5 @@
 
-import { parseRawJsExpression } from '../utils.js';
+import { parseRawJsExpression } from '../../utils.js';
 
 export function getAstReactiveAttribute(element_variable, attribute_name, /* attribute_modifiers, */ attribute_expression) {
 	return {

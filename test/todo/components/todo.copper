@@ -1,0 +1,58 @@
+
+<cu-todo>
+	<h2>Todo:</h2>
+	<div>
+		<input
+			type="text"
+			:value.sync="new_todo_title"
+			>
+		<input
+			type="button"
+			value="Add"
+			@click="addTodo()"
+			>
+	</div>
+	<cu if="todo.length > 0">
+		<cu
+			for="index, task of todo"
+			key="task.id"
+			>
+			<div>
+				Task #{{ index.value + 1 }}: {{ task.value.title }}
+				<input
+					type="button"
+					value="Remove"
+					@click="todo.splice(index.value, 1)"
+					>
+			</div>
+		</cu>
+	</cu>
+	<cu else>
+		<i>No tasks to do.</i>
+	</cu>
+</cu-todo>
+
+<script type="module">
+	import { ref, reactive } from 'copper';
+
+	const new_todo_title = ref('');
+	const todo = reactive([]);
+
+	function addTodo() {
+		todo.push({
+			id: Date.now(),
+			title: new_todo_title.value,
+		});
+		new_todo_title.value = '';
+	}
+</script>
+
+<style>
+	cu-todo {
+		content: '`123`';
+		display: block;
+		padding: 10px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+	}
+</style>

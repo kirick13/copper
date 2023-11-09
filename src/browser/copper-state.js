@@ -3,7 +3,7 @@ import { watch } from 'vue';
 
 export class CopperState {
 	element;
-	watchers = new Set();
+	#watchers = [];
 
 	constructor(element) {
 		this.element = element;
@@ -12,7 +12,7 @@ export class CopperState {
 	watch(...args) {
 		const unwatch = watch(...args);
 
-		this.watchers.add(unwatch);
+		this.#watchers.push(unwatch);
 
 		return unwatch;
 	}
@@ -24,20 +24,19 @@ export class CopperState {
 			this.element.removeEventListener(...args);
 		};
 
-		this.watchers.add(removeListener);
+		this.#watchers.push(removeListener);
 
 		return removeListener;
 	}
 
-	destroy() {
-		// this.watchers_weak = new WeakSet();
-		// this.watchers_weak.add(() => {});
-		for (const watcher of this.watchers) {
-			// this.watchers_weak.add(watcher);
-			watcher();
-		}
+	addWatcher(watcher) {
+		this.#watchers.push(watcher);
+	}
 
-		this.watchers.clear();
+	destroy() {
+		while (this.#watchers.length > 0) {
+			this.#watchers.pop()();
+		}
 
 		for (const child of this.element.childNodes) {
 			child._copper?.destroy();

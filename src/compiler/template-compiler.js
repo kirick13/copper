@@ -1,39 +1,42 @@
 
-import { getAstCreateElement }          from './ast/create-element.js';
-import { getAstCreateTextNode }         from './ast/create-text-node.js';
-import { getAstListener }               from './ast/listener.js';
-import { getAstNodesAppend }            from './ast/node-append.js';
-import { getAstReactiveAttribute }      from './ast/reactive-attribute.js';
-import { getAstReactiveInputValue }     from './ast/reactive-input-value.js';
-import { getAstReactiveTextNode }       from './ast/reactive-text-node.js';
-import { getAstSetAttribute }           from './ast/set-attribute.js';
-import { getAstVariableDeclaration }    from './ast/variable-declaration.js';
-import { converterFor } from './converter/for.js';
-import { ConverterIf } from './converter/if.js';
+import { getAstCreateElement }       from './template-compiler/ast/create-element.js';
+import { getAstCreateTextNode }      from './template-compiler/ast/create-text-node.js';
+import { getAstListener }            from './template-compiler/ast/listener.js';
+import { getAstNodesAppend }         from './template-compiler/ast/node-append.js';
+import { getAstReactiveAttribute }   from './template-compiler/ast/reactive-attribute.js';
+import { getAstReactiveInputValue }  from './template-compiler/ast/reactive-input-value.js';
+import { getAstReactiveTextNode }    from './template-compiler/ast/reactive-text-node.js';
+import { getAstSetAttribute }        from './template-compiler/ast/set-attribute.js';
+import { getAstVariableDeclaration } from './template-compiler/ast/variable-declaration.js';
+import { templateCompilerFor }       from './template-compiler/for.js';
+import { TemplateCompilerIf }        from './template-compiler/if.js';
 import {
 	createVariableName,
 	parseAttribute,
 	parseMustache }                  from './utils.js';
 
-export class Converter {
+export class TemplateCompiler {
 	ast = [];
 	variables;
 	options = {
 		no_append_on_root: false,
 	};
 
-	constructor(element, options = {}) {
+	constructor(node, options = {}) {
 		this.options.no_append_on_root = options.no_append_on_root ?? false;
 
 		this.variables = new Set(
-			this.#convertChilds(element),
+			this.#convertChilds(node),
 		);
 	}
 
-	#convertChilds(element, variable_parent_element = '$root') {
+	#convertChilds(node, variable_parent_element = '$root') {
 		const variables = [];
 
-		const { ast } = this;
+		const {
+			ast,
+			options,
+		} = this;
 
 		const context = {
 			variable_parent_element,
@@ -53,7 +56,7 @@ export class Converter {
 			},
 		};
 
-		for (const element_child of element.childNodes) {
+		for (const element_child of node.childNodes) {
 			variables.push(
 				...this.#convertElement(
 					element_child,
@@ -68,12 +71,12 @@ export class Converter {
 			variables.length > 0
 			&& (
 				variable_parent_element !== '$root'
-				|| this.options.no_append_on_root !== true
+				|| options.no_append_on_root !== true
 			)
 		) {
 			ast.push(
 				getAstNodesAppend(
-					context.variable_parent_element,
+					variable_parent_element,
 					variables,
 				),
 			);
@@ -95,7 +98,7 @@ export class Converter {
 			if (attributes.has('if')) {
 				context.flushIf();
 
-				context.if = new ConverterIf(
+				context.if = new TemplateCompilerIf(
 					attributes.get('if'),
 					element,
 				);
@@ -117,7 +120,7 @@ export class Converter {
 				const variable = createVariableName();
 				variables.push(variable);
 
-				const ast = converterFor(element, attributes);
+				const ast = templateCompilerFor(element, attributes);
 				this.ast.push(
 					getAstVariableDeclaration(
 						variable,

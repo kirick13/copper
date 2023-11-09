@@ -2160,13 +2160,13 @@ if (true) {
 // src/browser/copper-state.js
 class CopperState {
   element;
-  watchers = new Set;
+  #watchers = [];
   constructor(element) {
     this.element = element;
   }
   watch(...args) {
     const unwatch = watch(...args);
-    this.watchers.add(unwatch);
+    this.#watchers.push(unwatch);
     return unwatch;
   }
   listen(...args) {
@@ -2174,14 +2174,16 @@ class CopperState {
     const removeListener = () => {
       this.element.removeEventListener(...args);
     };
-    this.watchers.add(removeListener);
+    this.#watchers.push(removeListener);
     return removeListener;
   }
+  addWatcher(watcher) {
+    this.#watchers.push(watcher);
+  }
   destroy() {
-    for (const watcher of this.watchers) {
-      watcher();
+    while (this.#watchers.length > 0) {
+      this.#watchers.pop()();
     }
-    this.watchers.clear();
     for (const child of this.element.childNodes) {
       child._copper?.destroy();
     }
@@ -2327,13 +2329,6 @@ function reactiveIf(watcher, outcomes) {
   const element_placeholder = comment();
   const copperState = element_placeholder._copper;
   const elements_active = [element_placeholder];
-  copperState.watchers.add(() => {
-    for (const element2 of elements_active) {
-      element2.remove();
-      element2._copper?.destroy();
-    }
-    elements_active.length = 0;
-  });
   setTimeout(() => {
     copperState.watch(watcher, (outcome_index) => {
       const [
@@ -2355,6 +2350,13 @@ function reactiveIf(watcher, outcomes) {
     }, {
       immediate: true
     });
+  });
+  copperState.addWatcher(() => {
+    for (const element2 of elements_active) {
+      element2.remove();
+      element2._copper?.destroy();
+    }
+    elements_active.length = 0;
   });
   return element_placeholder;
 }
@@ -2439,7 +2441,7 @@ function reactiveFor(watcher, getter_key, getter) {
       immediate: true
     });
   });
-  copperState.watchers.add(() => {
+  copperState.addWatcher(() => {
     for (const { elements } of elements_active.values()) {
       for (const element3 of elements) {
         element3.remove();
@@ -2511,10 +2513,32 @@ function listen(element3, event_name, callback, modifiers) {
   if (Object.keys(options).length > 0) {
     args.push(options);
   }
-  element3.addEventListener(...args);
-  element3._copper.watchers.add(() => {
-    element3.removeEventListener(...args);
-  });
+  element3._copper.listen(...args);
+}
+// src/browser/copper-element.js
+class CopperElement extends HTMLElement {
+  root;
+  constructor(options = {}) {
+    super();
+    const option_shadow = options.shadow ?? "none";
+    switch (option_shadow) {
+      case "open":
+      case "closed":
+        this.root = this.attachShadow({
+          mode: option_shadow
+        });
+        break;
+      case "none":
+        this.root = this;
+        break;
+      default:
+        throw new Error(`Invalid "shadow" option: "${options.shadow}".`);
+    }
+    setTimeout(() => this.render());
+  }
+  render() {
+    throw new Error("No render method found.");
+  }
 }
 export {
   watch,
@@ -2529,5 +2553,6 @@ export {
   listen,
   fragment,
   el,
-  attr
+  attr,
+  CopperElement
 };

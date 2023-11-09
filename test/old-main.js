@@ -1,6 +1,6 @@
 
 import { writeFileSync } from 'node:fs';
-import { parseTemplate } from '../src/compiler.js';
+import { parseTemplate } from '../src/old-compiler.js';
 
 const code = `
 	import { ref, reactive } from '/test/html/copper.js';

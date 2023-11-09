@@ -1,10 +1,10 @@
 
-import { Converter }            from '../converter.js';
+import { TemplateCompiler }     from '../template-compiler.js';
 import { parseRawJsExpression } from '../utils.js';
 
 const regexp_values = /^\s*(?:([$A-Z_a-z][\w$]+)\s*,\s*)?([$A-Z_a-z][\w$]+)\s+of\s+/;
 
-export function converterFor(element, attributes) {
+export function templateCompilerFor(element, attributes) {
 	const attribute_for = attributes.get('for');
 	const [ match, variable_index, variable_value ] = regexp_values.exec(attribute_for);
 	const expression = attribute_for.slice(match.length);
@@ -34,7 +34,7 @@ export function converterFor(element, attributes) {
 		};
 	}
 
-	const converter = new Converter(
+	const templateCompiler = new TemplateCompiler(
 		element,
 		{
 			no_append_on_root: true,
@@ -42,7 +42,7 @@ export function converterFor(element, attributes) {
 	);
 
 	const ast_return = [];
-	for (const variable of converter.variables) {
+	for (const variable of templateCompiler.variables) {
 		ast_return.push({
 			type: 'Identifier',
 			name: variable,
@@ -68,7 +68,7 @@ export function converterFor(element, attributes) {
 				body: {
 					type: 'BlockStatement',
 					body: [
-						...converter.ast,
+						...templateCompiler.ast,
 						{
 							type: 'ReturnStatement',
 							argument: {

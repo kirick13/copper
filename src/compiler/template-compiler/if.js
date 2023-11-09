@@ -1,7 +1,6 @@
 
-import { getAstCreateDocumentFragment } from '../ast/create-document-fragment.js';
-import { getAstVariableDeclaration }    from '../ast/variable-declaration.js';
-import { Converter }                    from '../converter.js';
+import { getAstVariableDeclaration }    from '../template-compiler/ast/variable-declaration.js';
+import { TemplateCompiler }             from '../template-compiler.js';
 import {
 	createVariableName,
 	parseRawJsExpression }              from '../utils.js';
@@ -40,7 +39,7 @@ function replaceObjectEntries(target, source) {
 	}
 }
 
-export class ConverterIf {
+export class TemplateCompilerIf {
 	ast_watch;
 	#ast_last_alternate;
 	asts_outcomes = [];
@@ -58,7 +57,7 @@ export class ConverterIf {
 	}
 
 	#addOutcome(element) {
-		const converter = new Converter(
+		const templateCompiler = new TemplateCompiler(
 			element,
 			{
 				no_append_on_root: true,
@@ -66,7 +65,7 @@ export class ConverterIf {
 		);
 
 		const ast_return = [];
-		for (const variable of converter.variables) {
+		for (const variable of templateCompiler.variables) {
 			ast_return.push({
 				type: 'Identifier',
 				name: variable,
@@ -79,7 +78,7 @@ export class ConverterIf {
 			body: {
 				type: 'BlockStatement',
 				body: [
-					...converter.ast,
+					...templateCompiler.ast,
 					{
 						type: 'ReturnStatement',
 						argument: {

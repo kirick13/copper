@@ -43,10 +43,5 @@ export function listen(element, event_name, callback, modifiers) {
 		args.push(options);
 	}
 
-	element.addEventListener(...args);
-	element._copper.watchers.add(
-		() => {
-			element.removeEventListener(...args);
-		},
-	);
+	element._copper.listen(...args);
 }

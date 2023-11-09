@@ -1,5 +1,4 @@
 
-import { CopperState } from '../copper-state.js';
 import { comment, fragment }    from '../element.js';
 
 // const weak_copper_states = window._copper_ifs = new WeakSet();
@@ -36,15 +35,6 @@ export function reactiveIf(watcher, outcomes) {
 	// weak_copper_states.add(copperState);
 
 	const elements_active = [ element_placeholder ];
-
-	copperState.watchers.add(() => {
-		for (const element of elements_active) {
-			element.remove();
-			element._copper?.destroy();
-		}
-
-		elements_active.length = 0;
-	});
 
 	setTimeout(() => {
 		copperState.watch(
@@ -88,6 +78,15 @@ export function reactiveIf(watcher, outcomes) {
 				immediate: true,
 			},
 		);
+	});
+
+	copperState.addWatcher(() => {
+		for (const element of elements_active) {
+			element.remove();
+			element._copper?.destroy();
+		}
+
+		elements_active.length = 0;
 	});
 
 	return element_placeholder;
