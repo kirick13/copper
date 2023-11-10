@@ -1,13 +1,12 @@
 
 import { getAstCreateElement }       from './template-compiler/ast/create-element.js';
 import { getAstCreateTextNode }      from './template-compiler/ast/create-text-node.js';
-import { getAstListener }            from './template-compiler/ast/listener.js';
 import { getAstNodesAppend }         from './template-compiler/ast/node-append.js';
-import { getAstReactiveAttribute }   from './template-compiler/ast/reactive-attribute.js';
-import { getAstReactiveInputValue }  from './template-compiler/ast/reactive-input-value.js';
 import { getAstReactiveTextNode }    from './template-compiler/ast/reactive-text-node.js';
-import { getAstSetAttribute }        from './template-compiler/ast/set-attribute.js';
 import { getAstVariableDeclaration } from './template-compiler/ast/variable-declaration.js';
+import {
+	compileComponentAttribute,
+	compileElementAttribute }        from './template-compiler/attribute.js';
 import { templateCompilerFor }       from './template-compiler/for.js';
 import { TemplateCompilerIf }        from './template-compiler/if.js';
 import {
@@ -186,53 +185,22 @@ export class TemplateCompiler {
 				),
 			);
 
-			for (const { name: attribute_name, value: attribute_value } of element.attrs) {
-				const {
-					is_bind,
-					is_event,
-					attribute,
-					modifiers,
-				} = parseAttribute(attribute_name);
+			const is_component = element.tagName.includes('-');
 
-				if (is_bind) {
-					if (modifiers.includes('sync')) {
-						this.ast.push(
-							getAstReactiveInputValue(
-								variable,
-								attribute_value,
-							),
-						);
-					}
-					else {
-						this.ast.push(
-							getAstReactiveAttribute(
-								variable,
-								attribute,
-								// modifiers,
-								attribute_value,
-							),
-						);
-					}
-				}
-				else if (is_event) {
-					this.ast.push(
-						getAstListener(
+			for (const { name: attribute_name, value: attribute_value } of element.attrs) {
+				this.ast.push(
+					is_component
+						? compileComponentAttribute(
 							variable,
-							attribute,
+							parseAttribute(attribute_name),
 							attribute_value,
-							modifiers,
-						),
-					);
-				}
-				else {
-					this.ast.push(
-						getAstSetAttribute(
+						)
+						: compileElementAttribute(
 							variable,
-							attribute_name,
+							parseAttribute(attribute_name),
 							attribute_value,
 						),
-					);
-				}
+				);
 			}
 
 			this.#convertChilds(element, variable);

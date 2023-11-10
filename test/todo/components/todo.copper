@@ -1,6 +1,6 @@
 
 <cu-todo>
-	<h2>Todo:</h2>
+	<todo-title :count="todo.length"></todo-title>
 	<div>
 		<input
 			type="text"
@@ -13,19 +13,11 @@
 			>
 	</div>
 	<cu if="todo.length > 0">
-		<cu
-			for="index, task of todo"
-			key="task.id"
+		<todo-list
+			:todo="todo"
+			@remove="todo.splice($event, 1)"
 			>
-			<div>
-				Task #{{ index.value + 1 }}: {{ task.value.title }}
-				<input
-					type="button"
-					value="Remove"
-					@click="todo.splice(index.value, 1)"
-					>
-			</div>
-		</cu>
+		</todo-list>
 	</cu>
 	<cu else>
 		<i>No tasks to do.</i>
@@ -34,6 +26,8 @@
 
 <script type="module">
 	import { ref, reactive } from 'copper';
+	import TodoTitle from '/test/todo/dist/components/todo-title.js';
+	import TodoList from '/test/todo/dist/components/todo-list.js';
 
 	const new_todo_title = ref('');
 	const todo = reactive([]);
@@ -49,7 +43,6 @@
 
 <style>
 	cu-todo {
-		content: '`123`';
 		display: block;
 		padding: 10px;
 		border: 1px solid #ccc;

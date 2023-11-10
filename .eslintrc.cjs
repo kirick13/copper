@@ -146,6 +146,8 @@ module.exports = {
 					CopperRef: true,
 					env: true,
 					fn: true,
+					prop: true,
+					reactiveProp: true,
 					ref: true,
 				},
 			},

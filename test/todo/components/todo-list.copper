@@ -1,0 +1,38 @@
+
+<todo-list>
+	<cu
+		for="index, task of todo.value"
+		key="task.id"
+		>
+		<div>
+			Task #{{ index.value + 1 }}: {{ task.value.title }}
+			<input
+				type="button"
+				value="Remove"
+				@click="remove(index.value)"
+				>
+		</div>
+	</cu>
+</todo-list>
+
+<script type="module">
+	import { emit } from 'copper';
+
+	const { todo } = this._copper.props;
+
+	function remove(index) {
+		this.emit(
+			'remove',
+			index,
+		);
+	}
+</script>
+
+<style>
+	todo-list {
+		display: block;
+		padding: 10px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+	}
+</style>

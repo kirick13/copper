@@ -1,8 +1,8 @@
 
 import { comment, fragment }    from '../element.js';
 
-// const weak_copper_states = window._copper_ifs = new WeakSet();
-// const weak_elements = window._copper_ifs_elements = new WeakSet();
+// const weak_copper_states = window._copper_ifs = new WeakSet(); // TODO: remove
+// const weak_elements = window._copper_ifs_elements = new WeakSet(); // TODO: remove
 
 function getNewElements(getter, element_placeholder) {
 	let element_to_insert = element_placeholder;
@@ -32,7 +32,7 @@ export function reactiveIf(watcher, outcomes) {
 	const element_placeholder = comment();
 	const copperState = element_placeholder._copper;
 
-	// weak_copper_states.add(copperState);
+	// weak_copper_states.add(copperState); // TODO: remove
 
 	const elements_active = [ element_placeholder ];
 

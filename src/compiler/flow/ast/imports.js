@@ -9,6 +9,7 @@ const IMPORTS = [
 	'reactiveTextNode',
 	'reactiveIf',
 	'reactiveFor',
+	'reactiveProp',
 	'listen',
 	'CopperElement',
 ];

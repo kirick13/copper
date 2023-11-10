@@ -1,7 +1,7 @@
 
 import { isRef } from 'vue';
 
-export function extractValue(source) {
+export function unref(source) {
 	if (isRef(source)) {
 		return source.value;
 	}

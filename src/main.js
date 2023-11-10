@@ -5,6 +5,7 @@ export { reactiveIf } from './browser/reactive/if.js';
 export { reactiveFor } from './browser/reactive/for.js';
 export { reactiveInputValue } from './browser/reactive/input-value.js';
 export { reactiveTextNode } from './browser/reactive/text-node.js';
+export { reactiveProp } from './browser/reactive/prop.js';
 export { listen } from './browser/listen.js';
 
 export { CopperElement } from './browser/copper-element.js';

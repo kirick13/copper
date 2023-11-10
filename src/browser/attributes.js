@@ -1,7 +1,7 @@
 
 import { BOOLEAN_ATTRIBUTES } from '../data/boolean-attributes.js';
 import { isPlainObject } 	  from '../utils.js';
-import { extractValue }       from './utils.js';
+import { unref }              from './utils.js';
 
 function convertClasses(value) {
 	const classes = new Set();
@@ -64,8 +64,8 @@ export function reactiveAttr(element, key, watcher) {
 			attr(
 				element,
 				key,
-				extractValue(value),
-				extractValue(value_old),
+				unref(value),
+				unref(value_old),
 			);
 		},
 		{

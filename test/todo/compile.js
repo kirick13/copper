@@ -6,6 +6,8 @@ import { compile } from '../../src/compiler.js';
 
 for (const filename of new Set([
 	'components/todo.copper',
+	'components/todo-list.copper',
+	'components/todo-title.copper',
 ])) {
 	const source_code = await readFile(
 		new URL(

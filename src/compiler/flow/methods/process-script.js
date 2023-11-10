@@ -25,34 +25,48 @@ export default function () {
 				index--;
 				break;
 			case 'VariableDeclaration':
-				for (const declaration of node.declarations) {
-					this.script_ast.body.splice(
-						index + 1,
-						0,
-						getAstComponentPropertyDefinition(
-							this,
-							declaration.id.name,
-						),
-					);
-
-					index++;
+				for (const variable of parseVariableDeclaration(node)) {
+					this.state_variables.add(variable);
 				}
 				break;
 			case 'FunctionDeclaration':
+				this.state_variables.add(node.id.name);
+
 				this.script_ast.body.splice(
-					index + 1,
-					0,
-					getAstComponentPropertyDefinition(
-						this,
-						node.id.name,
-					),
+					index,
+					1,
+					{
+						type: 'VariableDeclaration',
+						kind: 'const',
+						declarations: [{
+							type: 'VariableDeclarator',
+							id: {
+								type: 'Identifier',
+								name: node.id.name,
+							},
+							init: {
+								type: 'CallExpression',
+								callee: {
+									type: 'MemberExpression',
+									object: node,
+									property: {
+										type: 'Identifier',
+										name: 'bind',
+									},
+								},
+								arguments: [{
+									type: 'ThisExpression',
+								}],
+							},
+						}],
+					},
 				);
 				break;
 			case 'ExportDefaultDeclaration':
 				console.warn('Default export from Copper component does not make sense.');
 				break;
 			case 'ExportAllDeclaration':
-				throw new Error('Named exports from Copper component are not supported.');
+				throw new Error('Named exports from Copper component are not yet supported.');
 			case 'ExportNamedDeclaration':
 				throw new Error('Named exports from Copper component are not yet supported.');
 			// no default
@@ -60,35 +74,51 @@ export default function () {
 	}
 }
 
-function getAstComponentPropertyDefinition(_this, name) {
-	_this.state_variables.add(name);
+function parseVariableDeclaration(node) {
+	const variables = [];
 
-	return {
-		type: 'ExpressionStatement',
-		expression: {
-			type: 'AssignmentExpression',
-			operator: '=',
-			left: {
-				type: 'MemberExpression',
-				object: {
-					type: 'MemberExpression',
-					object: {
-						type: 'ThisExpression',
-					},
-					property: {
-						type: 'PrivateIdentifier',
-						name: 'state',
-					},
-				},
-				property: {
-					type: 'Identifier',
-					name,
-				},
-			},
-			right: {
-				type: 'Identifier',
-				name,
-			},
-		},
-	};
+	for (const declaration of node.declarations) {
+		variables.push(
+			...parseVariableDeclaratorId(declaration.id),
+		);
+	}
+
+	return variables;
+}
+
+function parseVariableDeclaratorId(node) {
+	const variables = [];
+
+	switch (node.type) {
+		case 'Identifier':
+			return [ node.name ];
+		case 'ArrayPattern':
+			for (const element of node.elements) {
+				variables.push(
+					...parseVariableDeclaratorId(element),
+				);
+			}
+			break;
+		case 'ObjectPattern':
+			for (const property of node.properties) {
+				variables.push(
+					...parseVariableDeclaratorId(property),
+				);
+			}
+			break;
+		case 'RestElement':
+			variables.push(
+				...parseVariableDeclaratorId(node.argument),
+			);
+			break;
+		case 'Property':
+			variables.push(
+				...parseVariableDeclaratorId(node.value),
+			);
+			break;
+		default:
+			throw new Error(`Unexpected node type "${node.type}" in VariableDeclarator.id.`);
+	}
+
+	return variables;
 }

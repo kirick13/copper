@@ -1,17 +1,16 @@
 
 import { parseRawJsExpression } from '../../utils.js';
 
-export function getAstReactiveAttribute(
+export function getAstReactiveProperty(
 	element_variable,
 	attribute_name,
-	// attribute_modifiers,
 	attribute_expression,
 ) {
 	return {
 		type: 'CallExpression',
 		callee: {
 			type: 'Identifier',
-			name: 'reactiveAttr',
+			name: 'reactiveProp',
 		},
 		arguments: [
 			{
@@ -22,13 +21,6 @@ export function getAstReactiveAttribute(
 				type: 'Literal',
 				value: attribute_name,
 			},
-			// {
-			// 	type: 'ArrayExpression',
-			// 	elements: attribute_modifiers.map((modifier) => ({
-			// 		type: 'Literal',
-			// 		value: modifier,
-			// 	})),
-			// },
 			{
 				type: 'ArrowFunctionExpression',
 				expression: true,

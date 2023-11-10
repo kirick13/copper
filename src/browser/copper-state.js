@@ -1,11 +1,18 @@
 
 import { watch } from 'vue';
 
+// const weak_copper_elements = window._copper_elements = new WeakSet(); // TODO: remove
+// const weak_copper_states = window._copper_states = new WeakSet(); // TODO: remove
+
 export class CopperState {
 	element;
+	props = {};
 	#watchers = [];
 
 	constructor(element) {
+		// weak_copper_elements.add(element); // TODO: remove
+		// weak_copper_states.add(this); // TODO: remove
+
 		this.element = element;
 	}
 

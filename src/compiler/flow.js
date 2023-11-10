@@ -47,7 +47,9 @@ export class CompilerFlow {
 	}
 
 	_processScript() {
-		flowProcessScript.call(this);
+		if (this.script_ast) {
+			flowProcessScript.call(this);
+		}
 
 		// add "imports" back
 		this._useImports();
@@ -78,15 +80,15 @@ export class CompilerFlow {
 			),
 			getAstClass(
 				class_name,
+				getAstStateProperties(
+					this.state_variables,
+				),
 				[
 					...this.ast_pseudo_imports,
-					...this.script_ast.body,
+					...(this.script_ast?.body ?? []),
 				],
 				[
 					...this.ast_pseudo_imports,
-					getAstStateProperties(
-						this.state_variables,
-					),
 					...(new TemplateCompiler(node)).ast,
 				],
 			),

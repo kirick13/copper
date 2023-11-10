@@ -2,7 +2,7 @@
 import { CopperState } from './copper-state.js';
 
 function attachCopper(element) {
-	element._copper = new CopperState(element);
+	element._copper ??= new CopperState(element);
 }
 
 // eslint-disable-next-line unicorn/prevent-abbreviations

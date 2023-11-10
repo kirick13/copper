@@ -1,0 +1,19 @@
+
+<todo-title>
+	Todo ({{ count }})
+</todo-title>
+
+<script type="module">
+	import { ref } from 'copper';
+
+	const { count } = this._copper.props;
+</script>
+
+<style>
+	todo-title {
+		display: block;
+		font-size: 1.5em;
+		font-weight: bold;
+		margin-bottom: .5em;
+	}
+</style>

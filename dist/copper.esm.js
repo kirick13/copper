@@ -2160,6 +2160,7 @@ if (true) {
 // src/browser/copper-state.js
 class CopperState {
   element;
+  props = {};
   #watchers = [];
   constructor(element) {
     this.element = element;
@@ -2194,7 +2195,7 @@ class CopperState {
 
 // src/browser/element.js
 var attachCopper = function(element) {
-  element._copper = new CopperState(element);
+  element._copper ??= new CopperState(element);
 };
 function el(tag) {
   const element = document.createElement(tag);
@@ -2250,7 +2251,7 @@ function isPlainObject2(value) {
 }
 
 // src/browser/utils.js
-function extractValue(source) {
+function unref2(source) {
   if (isRef(source)) {
     return source.value;
   }
@@ -2301,7 +2302,7 @@ function attr(element, key, value, value_old) {
 }
 function reactiveAttr(element, key, watcher) {
   element._copper.watch(watcher, (value, value_old) => {
-    attr(element, key, extractValue(value), extractValue(value_old));
+    attr(element, key, unref2(value), unref2(value_old));
   }, {
     deep: true,
     immediate: true
@@ -2410,7 +2411,7 @@ function reactiveFor(watcher, getter_key, getter) {
         } else {
           ref_key = ref(inner_key);
           ref_value = ref(inner_value);
-          elements = getter(ref_value, ref_key);
+          elements = getter(readonly(ref_value), readonly(ref_key));
         }
         if (elements.length === 0) {
           continue;
@@ -2455,7 +2456,7 @@ function reactiveFor(watcher, getter_key, getter) {
 // src/browser/reactive/input-value.js
 function reactiveInputValue(element3, watcher) {
   element3._copper.watch(watcher, (value) => {
-    element3.value = extractValue(value);
+    element3.value = unref2(value);
   }, {
     deep: true,
     immediate: true
@@ -2467,11 +2468,22 @@ function reactiveInputValue(element3, watcher) {
 // src/browser/reactive/text-node.js
 function reactiveTextNode(element3, watcher) {
   element3._copper.watch(watcher, (value) => {
-    element3.textContent = String(extractValue(value));
+    element3.textContent = String(unref2(value));
   }, {
     deep: true,
     immediate: true
   });
+}
+// src/browser/reactive/prop.js
+function reactiveProp(element3, key, watcher) {
+  const copperState = element3._copper;
+  const prop = ref();
+  copperState.watch(watcher, (value) => {
+    prop.value = value;
+  }, {
+    immediate: true
+  });
+  copperState.props[key] = readonly(prop);
 }
 // src/browser/listen.js
 function listen(element3, event_name, callback, modifiers) {
@@ -2507,7 +2519,7 @@ function listen(element3, event_name, callback, modifiers) {
       if (modifiers.has("stop")) {
         event.stopPropagation();
       }
-      callback(event);
+      callback(modifiers.has(".component") ? event.detail : event);
     }
   ];
   if (Object.keys(options).length > 0) {
@@ -2534,10 +2546,28 @@ class CopperElement extends HTMLElement {
       default:
         throw new Error(`Invalid "shadow" option: "${options.shadow}".`);
     }
-    setTimeout(() => this.render());
+    this._copper = new CopperState(this);
   }
-  render() {
+  #is_ready = false;
+  _init(state) {
+    this._render(this.root, state);
+  }
+  _render() {
     throw new Error("No render method found.");
+  }
+  connectedCallback() {
+    if (!this.#is_ready) {
+      this.#is_ready = true;
+      this._init();
+    }
+    this.onMount?.();
+  }
+  disconnectedCallback() {
+  }
+  emit(event_name, value) {
+    this.dispatchEvent(new CustomEvent(`copper:${event_name}`, {
+      detail: value
+    }));
   }
 }
 export {
@@ -2545,6 +2575,7 @@ export {
   text,
   ref,
   reactiveTextNode,
+  reactiveProp,
   reactiveInputValue,
   reactiveIf,
   reactiveFor,

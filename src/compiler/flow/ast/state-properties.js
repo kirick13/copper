@@ -17,25 +17,5 @@ export function getAstStateProperties(state_properties) {
 		});
 	}
 
-	return {
-		type: 'VariableDeclaration',
-		kind: 'const',
-		declarations: [{
-			type: 'VariableDeclarator',
-			id: {
-				type: 'ObjectPattern',
-				properties,
-			},
-			init: {
-				type: 'MemberExpression',
-				object: {
-					type: 'ThisExpression',
-				},
-				property: {
-					type: 'PrivateIdentifier',
-					name: 'state',
-				},
-			},
-		}],
-	};
+	return properties;
 }

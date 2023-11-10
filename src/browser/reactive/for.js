@@ -1,5 +1,5 @@
 
-import { ref } from 'vue';
+import { ref, readonly } from 'vue';
 
 import { isPlainObject } from '../../utils.js';
 import { comment, fragment } from '../element.js';
@@ -80,8 +80,8 @@ export function reactiveFor(watcher, getter_key, getter) {
 						ref_value = ref(inner_value);
 
 						elements = getter(
-							ref_value,
-							ref_key,
+							readonly(ref_value),
+							readonly(ref_key),
 						);
 					}
 

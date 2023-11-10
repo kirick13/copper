@@ -36,7 +36,11 @@ export function listen(element, event_name, callback, modifiers) {
 				event.stopPropagation();
 			}
 
-			callback(event);
+			callback(
+				modifiers.has('.component')
+					? event.detail
+					: event,
+			);
 		},
 	];
 	if (Object.keys(options).length > 0) {
