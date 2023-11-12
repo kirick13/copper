@@ -1,5 +1,5 @@
 
-export function getAstStyle(style) {
+export function getAstStyle(flow, style) {
 	return {
 		type: 'BlockStatement',
 		body: [
@@ -16,10 +16,10 @@ export function getAstStyle(style) {
 						type: 'CallExpression',
 						callee: {
 							type: 'Identifier',
-							name: 'el',
+							name: flow._getCopperImportVariable('el'),
 						},
 						arguments: [{
-							type: 'Literal',
+							type: 'StringLiteral',
 							value: 'style',
 						}],
 					},
@@ -42,7 +42,7 @@ export function getAstStyle(style) {
 						},
 					},
 					right: {
-						type: 'Literal',
+						type: 'StringLiteral',
 						value: style,
 					},
 					// right: {

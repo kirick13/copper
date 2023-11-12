@@ -1,84 +1,67 @@
 
+import * as t 				    from '@babel/types';
 import { TemplateCompiler }     from '../template-compiler.js';
 import { parseRawJsExpression } from '../utils.js';
+import { REF, magicUnref } from '../magic-unref.js';
 
 const regexp_values = /^\s*(?:([$A-Z_a-z][\w$]+)\s*,\s*)?([$A-Z_a-z][\w$]+)\s+of\s+/;
 
-export function templateCompilerFor(element, attributes) {
+export function templateCompilerFor(flow, element, attributes) {
+	const refs = new Map(flow.script.refs);
+
 	const attribute_for = attributes.get('for');
 	const [ match, variable_index, variable_value ] = regexp_values.exec(attribute_for);
 	const expression = attribute_for.slice(match.length);
 
-	const getter_parameters = [{
-		type: 'Identifier',
-		name: variable_value,
-	}];
-	if (typeof variable_index === 'string') {
-		getter_parameters.push({
-			type: 'Identifier',
-			name: variable_index,
-		});
-	}
-
-	let getter_key = {
-		type: 'Literal',
-		value: null,
-	};
-	if (attributes.has('key')) {
-		getter_key = {
-			type: 'ArrowFunctionExpression',
-			params: getter_parameters,
-			body: parseRawJsExpression(
-				attributes.get('key'),
-			),
-		};
-	}
-
-	const templateCompiler = new TemplateCompiler(
-		element,
-		{
-			no_append_on_root: true,
-		},
+	const getter_parameters = [
+		t.identifier(variable_value),
+	];
+	refs.set(
+		variable_value,
+		REF,
 	);
 
-	const ast_return = [];
-	for (const variable of templateCompiler.variables) {
-		ast_return.push({
-			type: 'Identifier',
-			name: variable,
-		});
+	if (typeof variable_index === 'string') {
+		getter_parameters.push(
+			t.identifier(variable_index),
+		);
+		refs.set(
+			variable_index,
+			REF,
+		);
 	}
 
-	return {
-		type: 'CallExpression',
-		callee: {
-			type: 'Identifier',
-			name: 'reactiveFor',
-		},
-		arguments: [
-			{
-				type: 'ArrowFunctionExpression',
-				params: [],
-				body: parseRawJsExpression(expression),
-			},
+	let getter_key = t.nullLiteral();
+	if (attributes.has('key')) {
+		getter_key = t.arrowFunctionExpression(
+			getter_parameters,
+			parseRawJsExpression(
+				attributes.get('key'),
+			),
+		);
+	}
+
+	const templateCompiler = new TemplateCompiler(flow, element);
+
+	return t.callExpression(
+		t.identifier(
+			flow._getCopperImportVariable('reactiveFor'),
+		),
+		[
+			t.arrowFunctionExpression(
+				[],
+				parseRawJsExpression(expression),
+			),
 			getter_key,
-			{
-				type: 'ArrowFunctionExpression',
-				params: getter_parameters,
-				body: {
-					type: 'BlockStatement',
-					body: [
-						...templateCompiler.ast,
-						{
-							type: 'ReturnStatement',
-							argument: {
-								type: 'ArrayExpression',
-								elements: ast_return,
-							},
-						},
-					],
-				},
-			},
+			t.arrowFunctionExpression(
+				getter_parameters,
+				t.arrayExpression(
+					magicUnref(
+						templateCompiler.asts,
+						refs,
+					).ast,
+				),
+			),
 		],
-	};
+	);
 }

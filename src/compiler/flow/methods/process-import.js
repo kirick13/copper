@@ -1,9 +1,10 @@
 
+import { REF_PROBABLY }       from '../../magic-unref.js';
 import { createVariableName } from '../../utils.js';
 
-export default function (source_name, specifiers) {
-	if (this.imports.has(source_name) !== true) {
-		this.imports.set(
+export default function flowProcessImport(source_name, specifiers) {
+	if (this.script.imports.has(source_name) !== true) {
+		this.script.imports.set(
 			source_name,
 			{
 				default: null,
@@ -13,15 +14,17 @@ export default function (source_name, specifiers) {
 		);
 	}
 
-	const import_data = this.imports.get(source_name);
+	const import_data = this.script.imports.get(source_name);
 
 	for (const node of specifiers) {
+		const variable_imported = node.local.name;
+
 		switch (node.type) {
 			case 'ImportDefaultSpecifier':
 				if (import_data.default === null) {
 					import_data.default = {
 						variable_outer: createVariableName(),
-						variable_inner: node.local.name,
+						variable_inner: variable_imported,
 					};
 				}
 				else {
@@ -36,7 +39,7 @@ export default function (source_name, specifiers) {
 					};
 				}
 
-				import_data.namespace.variable_inner = node.local.name;
+				import_data.namespace.variable_inner = variable_imported;
 				break;
 			case 'ImportSpecifier':
 				if (import_data.namespace === null) {
@@ -53,9 +56,15 @@ export default function (source_name, specifiers) {
 					);
 				}
 
-				import_data.named.get(node.imported.name).add(node.local.name);
+				import_data.named.get(node.imported.name).add(variable_imported);
 				break;
 			// no default
 		}
+
+		this.script.variables.add(variable_imported);
+		this.script.refs.set(
+			variable_imported,
+			REF_PROBABLY,
+		);
 	}
 }

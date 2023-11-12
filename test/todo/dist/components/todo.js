@@ -1,73 +1,43 @@
-import * as _lh6t0gpsl from "copper";
-import _177z6ejlg from "/test/todo/dist/components/todo-title.js";
-import _o550n8v2k from "/test/todo/dist/components/todo-list.js";
-import {el, text, fragment, attr, reactiveAttr, reactiveInputValue, reactiveTextNode, reactiveIf, reactiveFor, reactiveProp, listen, CopperElement} from "copper";
+import { ref as _ref_brwu3zuro, text as _text_1fj9q0zw7, el as _el_5z02t0l9b, reactiveProp as _reactiveProp_pecs6t4vr, attr as _attr_kkbkqq0y5, listen as _listen_wpm3d6faz, append as _append_z8dbnv80b, reactiveInputValue as _reactiveInputValue_jgkh29fuw, reactiveIf as _reactiveIf_beipo1h0n, CopperElement as _CopperElement_jrqkcqprf } from "copper";
+import _egy6xejbb from "/test/todo/dist/components/todo-list.js";
+import _k2wf4odr0 from "/test/todo/dist/components/todo-title.js";
 {
-  const el_style = el("style");
+  const el_style = _el_5z02t0l9b("style");
   el_style.innerText = "\n\tcu-todo {\n\t\tdisplay: block;\n\t\tpadding: 10px;\n\t\tborder: 1px solid #ccc;\n\t\tborder-radius: 5px;\n\t}\n";
   document.head.append(el_style);
 }
-export default class CopperTodoElement extends CopperElement {
-  _init() {
-    const {ref, reactive} = _lh6t0gpsl;
-    const TodoTitle = _177z6ejlg;
-    const TodoList = _o550n8v2k;
-    const new_todo_title = ref('');
-    const todo = reactive([]);
-    const addTodo = function addTodo() {
-      todo.push({
+export default class CopperTodoElement extends _CopperElement_jrqkcqprf {
+  init() {
+    const TodoList = _egy6xejbb;
+    const TodoTitle = _k2wf4odr0;
+    const counter = _ref_brwu3zuro(0);
+    const new_todo_title = _ref_brwu3zuro('');
+    const todo = _ref_brwu3zuro([]);
+    const addTodo = function addTodo(arg) {
+      todo.value.push({
         id: Date.now(),
         title: new_todo_title.value
       });
       new_todo_title.value = '';
     }.bind(this);
-    super._init({
+    super.init({
+      TodoList,
+      TodoTitle,
+      addTodo,
+      counter,
       new_todo_title,
-      todo,
-      addTodo
+      todo
     });
   }
-  _render($root, {new_todo_title, todo, addTodo}) {
-    const {ref, reactive} = _lh6t0gpsl;
-    const TodoTitle = _177z6ejlg;
-    const TodoList = _o550n8v2k;
-    const _nzm34oaog = text("\n\t");
-    const _27292v6kh = el("todo-title");
-    reactiveProp(_27292v6kh, "count", () => todo.length)
-    const _7fxbzwu6y = text("\n\t");
-    const _w4jviwpo6 = el("div");
-    const _orn6v9cyi = text("\n\t\t");
-    const _4ab02u198 = el("input");
-    attr(_4ab02u198, "type", "text")
-    reactiveInputValue(_4ab02u198, () => new_todo_title)
-    const _8xg8qpio2 = text("\n\t\t");
-    const _rbfjfms7g = el("input");
-    attr(_rbfjfms7g, "type", "button")
-    attr(_rbfjfms7g, "value", "Add")
-    listen(_rbfjfms7g, "click", $event => addTodo(), [])
-    const _17yhok283 = text("\n\t");
-    _w4jviwpo6.append(_orn6v9cyi, _4ab02u198, _8xg8qpio2, _rbfjfms7g, _17yhok283);
-    const _njd9m3pbb = text("\n\t");
-    const _dq2r75p03 = text("\n\t");
-    const _r6pc91x52 = reactiveIf(() => todo.length > 0 ? 0 : 1, [() => {
-      const _v0frz8xx9 = text("\n\t\t");
-      const _wana3aksr = el("todo-list");
-      reactiveProp(_wana3aksr, "todo", () => todo)
-      listen(_wana3aksr, "copper:remove", $event => todo.splice($event, 1), [".component"])
-      const _scnplnhgm = text("\n\t\t");
-      _wana3aksr.append(_scnplnhgm);
-      const _wuseqp4bi = text("\n\t");
-      return [_v0frz8xx9, _wana3aksr, _wuseqp4bi];
-    }, () => {
-      const _cd8lzwue4 = text("\n\t\t");
-      const _4470oep4h = el("i");
-      const _k019v4ufw = text("No tasks to do.");
-      _4470oep4h.append(_k019v4ufw);
-      const _z6od8yx6f = text("\n\t");
-      return [_cd8lzwue4, _4470oep4h, _z6od8yx6f];
-    }]);
-    const _cnz5t2xdv = text("\n");
-    $root.append(_nzm34oaog, _27292v6kh, _7fxbzwu6y, _w4jviwpo6, _njd9m3pbb, _dq2r75p03, _r6pc91x52, _cnz5t2xdv);
+  render({
+    TodoList,
+    TodoTitle,
+    addTodo,
+    counter,
+    new_todo_title,
+    todo
+  }) {
+    super.render(_text_1fj9q0zw7(), _reactiveProp_pecs6t4vr(_el_5z02t0l9b("todo-title"), "count", () => todo.value.length), _text_1fj9q0zw7(), _append_z8dbnv80b(_el_5z02t0l9b("div"), _text_1fj9q0zw7(" counter: "), _text_1fj9q0zw7(() => counter.value), _text_1fj9q0zw7(), _listen_wpm3d6faz(_attr_kkbkqq0y5(_el_5z02t0l9b("input"), "type", "button", "value", "Increment"), "click", $event => counter.value++, []), _text_1fj9q0zw7()), _text_1fj9q0zw7(), _append_z8dbnv80b(_el_5z02t0l9b("div"), _text_1fj9q0zw7(), _reactiveInputValue_jgkh29fuw(_attr_kkbkqq0y5(_el_5z02t0l9b("input"), "type", "text"), () => new_todo_title.value, value => new_todo_title.value = value), _text_1fj9q0zw7(), _listen_wpm3d6faz(_attr_kkbkqq0y5(_el_5z02t0l9b("input"), "type", "button", "value", "Add"), "click", $event => addTodo(), []), _text_1fj9q0zw7()), _text_1fj9q0zw7(), _text_1fj9q0zw7(), _reactiveIf_beipo1h0n(() => todo.value.length > 0 ? 0 : 1, [() => [_text_1fj9q0zw7(), _append_z8dbnv80b(_listen_wpm3d6faz(_reactiveProp_pecs6t4vr(_el_5z02t0l9b("todo-list"), "todo", () => todo.value), "copper:remove", $event => todo.value.splice($event, 1), [".component"]), _text_1fj9q0zw7()), _text_1fj9q0zw7()], () => [_text_1fj9q0zw7(), _append_z8dbnv80b(_el_5z02t0l9b("i"), _text_1fj9q0zw7("No tasks to do.")), _text_1fj9q0zw7()]]), _text_1fj9q0zw7());
   }
 }
 window.customElements.define("cu-todo", CopperTodoElement);

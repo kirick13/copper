@@ -1,90 +1,49 @@
 
+import * as t from '@babel/types';
+
 export function getAstClass(
 	class_name,
 	ast_state_properties,
-	ast_script,
+	asts_script,
 	ast_render,
 ) {
-	return {
-		type: 'ExportDefaultDeclaration',
-		declaration: {
-			type: 'ClassDeclaration',
-			id: {
-				type: 'Identifier',
-				name: class_name,
-			},
-			superClass: {
-				type: 'Identifier',
-				name: 'CopperElement',
-			},
-			body: {
-				type: 'ClassBody',
-				body: [
-					{
-						type: 'MethodDefinition',
-						kind: 'method',
-						key: {
-							type: 'Identifier',
-							name: '_init',
-						},
-						value: {
-							type: 'FunctionExpression',
-							params: [],
-							body: {
-								type: 'BlockStatement',
-								body: [
-									...ast_script,
-									{
-										type: 'ExpressionStatement',
-										expression: {
-											type: 'CallExpression',
-											callee: {
-												type: 'MemberExpression',
-												object: {
-													type: 'Super',
-												},
-												property: {
-													type: 'Identifier',
-													name: '_init',
-												},
-											},
-											arguments: [{
-												type: 'ObjectExpression',
-												properties: ast_state_properties,
-											}],
-										},
-									},
+	return t.exportDefaultDeclaration(
+		t.classDeclaration(
+			t.identifier(class_name),
+			t.identifier(
+				this._getCopperImportVariable('CopperElement'),
+			),
+			t.classBody([
+				t.classMethod(
+					'method',
+					t.identifier('init'),
+					[],
+					t.blockStatement([
+						...asts_script,
+						t.expressionStatement(
+							t.callExpression(
+								t.memberExpression(
+									t.super(),
+									t.identifier('init'),
+								),
+								[
+									t.objectExpression(ast_state_properties),
 								],
-							},
-						},
-					},
-					{
-						type: 'MethodDefinition',
-						key: {
-							type: 'Identifier',
-							name: '_render',
-						},
-						kind: 'method',
-						value: {
-							type: 'FunctionExpression',
-							params: [
-								{
-									type: 'Identifier',
-									name: '$root',
-								},
-								{
-									type: 'ObjectPattern',
-									properties: ast_state_properties,
-								},
-							],
-							body: {
-								type: 'BlockStatement',
-								body: ast_render,
-							},
-						},
-					},
-				],
-			},
-		},
-	};
+							),
+						),
+					]),
+				),
+				t.classMethod(
+					'method',
+					t.identifier('render'),
+					[
+						t.objectPattern(ast_state_properties),
+					],
+					t.blockStatement([
+						ast_render,
+					]),
+				),
+			]),
+		),
+	);
 }

@@ -610,6 +610,26 @@ var unref = function(ref2) {
 var proxyRefs = function(objectWithRefs) {
   return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers);
 };
+var computed = function(getterOrOptions, debugOptions, isSSR = false) {
+  let getter;
+  let setter;
+  const onlyGetter = isFunction(getterOrOptions);
+  if (onlyGetter) {
+    getter = getterOrOptions;
+    setter = () => {
+      console.warn("Write operation failed: computed value is readonly");
+    };
+  } else {
+    getter = getterOrOptions.get;
+    setter = getterOrOptions.set;
+  }
+  const cRef = new ComputedRefImpl(getter, setter, onlyGetter || !setter, isSSR);
+  if (debugOptions && !isSSR) {
+    cRef.effect.onTrack = debugOptions.onTrack;
+    cRef.effect.onTrigger = debugOptions.onTrigger;
+  }
+  return cRef;
+};
 var activeEffectScope;
 var createDep = (effects) => {
   const dep = new Set(effects);
@@ -889,6 +909,36 @@ var shallowUnwrapHandlers = {
     }
   }
 };
+class ComputedRefImpl {
+  constructor(getter, _setter, isReadonly2, isSSR) {
+    this._setter = _setter;
+    this.dep = undefined;
+    this.__v_isRef = true;
+    this["__v_isReadonly"] = false;
+    this._dirty = true;
+    this.effect = new ReactiveEffect(getter, () => {
+      if (!this._dirty) {
+        this._dirty = true;
+        triggerRefValue(this);
+      }
+    });
+    this.effect.computed = this;
+    this.effect.active = this._cacheable = !isSSR;
+    this["__v_isReadonly"] = isReadonly2;
+  }
+  get value() {
+    const self2 = toRaw(this);
+    trackRefValue(self2);
+    if (self2._dirty || !self2._cacheable) {
+      self2._dirty = false;
+      self2._value = self2.effect.run();
+    }
+    return self2._value;
+  }
+  set value(newValue) {
+    this._setter(newValue);
+  }
+}
 // /Users/daniil/Development/Public/copper/node_modules/.pnpm/@vue+runtime-dom@3.3.7/node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js
 var pushWarningContext = function(vnode) {
   stack.push(vnode);
@@ -2136,6 +2186,9 @@ var unsetCurrentInstance = () => {
 var isInSSRComponentSetup = false;
 var classifyRE = /(?:^|[-_])(\w)/g;
 var classify = (str) => str.replace(classifyRE, (c) => c.toUpperCase()).replace(/[-_]/g, "");
+var computed2 = (getterOrOptions, debugOptions) => {
+  return computed(getterOrOptions, debugOptions, isInSSRComponentSetup);
+};
 var ssrContextKey = Symbol.for("v-scx");
 var useSSRContext = () => {
   {
@@ -2202,10 +2255,19 @@ function el(tag) {
   attachCopper(element);
   return element;
 }
-function text(text2 = "") {
-  const text_node = document.createTextNode(text2);
-  attachCopper(text_node);
-  return text_node;
+function text(arg0) {
+  const is_getter = typeof arg0 === "function";
+  const element = document.createTextNode(is_getter ? "" : arg0 ?? " ");
+  attachCopper(element);
+  if (is_getter) {
+    element._copper.watch(arg0, (value) => {
+      element.textContent = String(unref(value));
+    }, {
+      deep: true,
+      immediate: true
+    });
+  }
+  return element;
 }
 function fragment() {
   return document.createDocumentFragment();
@@ -2214,6 +2276,11 @@ function comment(text2 = "") {
   const element = document.createComment(text2);
   attachCopper(element);
   return element;
+}
+// src/browser/append.js
+function append(element_target, ...elements_to_append) {
+  element_target.append(...elements_to_append);
+  return element_target;
 }
 // src/data/boolean-attributes.js
 var BOOLEAN_ATTRIBUTES = new Set([
@@ -2250,14 +2317,6 @@ function isPlainObject2(value) {
   return typeof value === "object" && value !== null && value.constructor === Object;
 }
 
-// src/browser/utils.js
-function unref2(source) {
-  if (isRef(source)) {
-    return source.value;
-  }
-  return source;
-}
-
 // src/browser/attributes.js
 var convertClasses = function(value) {
   const classes = new Set;
@@ -2278,7 +2337,7 @@ var convertClasses = function(value) {
   }
   return classes;
 };
-function attr(element, key, value, value_old) {
+var setAttr = function(element, key, value, value_old) {
   if (BOOLEAN_ATTRIBUTES.has(key)) {
     if (value) {
       element.setAttribute(key, "");
@@ -2294,19 +2353,28 @@ function attr(element, key, value, value_old) {
     for (const class_name of class_names_before) {
       element.classList.remove(class_name);
     }
-  } else if (value) {
+  } else if (value !== null && value !== undefined) {
     element.setAttribute(key, value);
   } else {
     element.removeAttribute(key);
   }
-}
-function reactiveAttr(element, key, watcher) {
-  element._copper.watch(watcher, (value, value_old) => {
-    attr(element, key, unref2(value), unref2(value_old));
-  }, {
-    deep: true,
-    immediate: true
-  });
+};
+function attr(element, ...args) {
+  for (let index = 0;index < args.length; index += 2) {
+    const key = args[index];
+    const arg0 = args[index + 1];
+    if (typeof arg0 === "function") {
+      element._copper.watch(arg0, (value, value_old) => {
+        attr(element, key, unref(value), unref(value_old));
+      }, {
+        deep: true,
+        immediate: true
+      });
+    } else {
+      setAttr(element, key, arg0);
+    }
+  }
+  return element;
 }
 // src/browser/reactive/if.js
 var getNewElements = function(getter, element_placeholder) {
@@ -2454,78 +2522,80 @@ function reactiveFor(watcher, getter_key, getter) {
   return element_placeholder;
 }
 // src/browser/reactive/input-value.js
-function reactiveInputValue(element3, watcher) {
+function reactiveInputValue(element3, watcher, setter) {
   element3._copper.watch(watcher, (value) => {
-    element3.value = unref2(value);
+    element3.value = value;
   }, {
     deep: true,
     immediate: true
   });
   element3._copper.listen("input", () => {
-    watcher().value = element3.value;
+    setter(element3.value);
   });
-}
-// src/browser/reactive/text-node.js
-function reactiveTextNode(element3, watcher) {
-  element3._copper.watch(watcher, (value) => {
-    element3.textContent = String(unref2(value));
-  }, {
-    deep: true,
-    immediate: true
-  });
+  return element3;
 }
 // src/browser/reactive/prop.js
-function reactiveProp(element3, key, watcher) {
+function reactiveProp(element3, ...args) {
   const copperState = element3._copper;
-  const prop = ref();
-  copperState.watch(watcher, (value) => {
-    prop.value = value;
-  }, {
-    immediate: true
-  });
-  copperState.props[key] = readonly(prop);
+  for (let index = 0;index < args.length; index += 2) {
+    const key = args[index];
+    const watcher = args[index + 1];
+    const prop = ref();
+    copperState.watch(watcher, (value) => {
+      prop.value = value;
+    }, {
+      immediate: true
+    });
+    copperState.props[key] = readonly(prop);
+  }
+  return element3;
 }
 // src/browser/listen.js
-function listen(element3, event_name, callback, modifiers) {
-  modifiers = new Set(modifiers);
-  const options = {};
-  if (modifiers.has("once")) {
-    options.once = true;
-  }
-  if (modifiers.has("passive")) {
-    options.passive = true;
-  }
-  if (modifiers.has("capture")) {
-    options.capture = true;
-  }
-  const args = [
-    event_name,
-    (event) => {
-      if (modifiers.has("shift") && !event.shiftKey) {
-        return;
-      }
-      if (modifiers.has("alt") && !event.altKey) {
-        return;
-      }
-      if (modifiers.has("ctrl") && !event.ctrlKey) {
-        return;
-      }
-      if (modifiers.has("meta") && !event.metaKey) {
-        return;
-      }
-      if (modifiers.has("prevent")) {
-        event.preventDefault();
-      }
-      if (modifiers.has("stop")) {
-        event.stopPropagation();
-      }
-      callback(modifiers.has(".component") ? event.detail : event);
+function listen(element3, ...args) {
+  for (let index = 0;index < args.length; index += 3) {
+    const event_name = args[index];
+    const callback = args[index + 1];
+    const modifiers = new Set(args[index + 2]);
+    const options = {};
+    if (modifiers.has("once")) {
+      options.once = true;
     }
-  ];
-  if (Object.keys(options).length > 0) {
-    args.push(options);
+    if (modifiers.has("passive")) {
+      options.passive = true;
+    }
+    if (modifiers.has("capture")) {
+      options.capture = true;
+    }
+    const listen_args = [
+      event_name,
+      (event) => {
+        if (modifiers.has("shift") && !event.shiftKey) {
+          return;
+        }
+        if (modifiers.has("alt") && !event.altKey) {
+          return;
+        }
+        if (modifiers.has("ctrl") && !event.ctrlKey) {
+          return;
+        }
+        if (modifiers.has("meta") && !event.metaKey) {
+          return;
+        }
+        if (modifiers.has("prevent")) {
+          event.preventDefault();
+        }
+        if (modifiers.has("stop")) {
+          event.stopPropagation();
+        }
+        callback(modifiers.has(".component") ? event.detail : event);
+      }
+    ];
+    if (Object.keys(options).length > 0) {
+      listen_args.push(options);
+    }
+    element3._copper.listen(...listen_args);
   }
-  element3._copper.listen(...args);
+  return element3;
 }
 // src/browser/copper-element.js
 class CopperElement extends HTMLElement {
@@ -2549,16 +2619,16 @@ class CopperElement extends HTMLElement {
     this._copper = new CopperState(this);
   }
   #is_ready = false;
-  _init(state) {
-    this._render(this.root, state);
+  init(state) {
+    this.render(state);
   }
-  _render() {
-    throw new Error("No render method found.");
+  render(...elements) {
+    this.root.append(...elements);
   }
   connectedCallback() {
     if (!this.#is_ready) {
       this.#is_ready = true;
-      this._init();
+      this.init();
     }
     this.onMount?.();
   }
@@ -2574,16 +2644,16 @@ export {
   watch,
   text,
   ref,
-  reactiveTextNode,
   reactiveProp,
   reactiveInputValue,
   reactiveIf,
   reactiveFor,
-  reactiveAttr,
   reactive,
   listen,
   fragment,
   el,
+  computed2 as computed,
   attr,
+  append,
   CopperElement
 };

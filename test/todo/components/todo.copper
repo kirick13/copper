@@ -1,6 +1,26 @@
 
+<!-- <cu-todo>
+	<h2>Todo ({{ todo.length }})</h2>
+	<!--
+	<cu if="todo.length > 0">
+		Todo list here...
+		<!-- <todo-list
+			:todo="todo"
+			@remove="todo.splice($event, 1)"
+			>
+		</todo-list> -/->
+	</cu>
+	<cu else>
+		<i>No tasks to do.</i>
+	</cu>
+</cu-todo> -->
+
 <cu-todo>
 	<todo-title :count="todo.length"></todo-title>
+	<div>
+		counter: {{ counter }}
+		<input type="button" value="Increment" @click="counter++">
+	</div>
 	<div>
 		<input
 			type="text"
@@ -25,21 +45,57 @@
 </cu-todo>
 
 <script type="module">
-	import { ref, reactive } from 'copper';
+	import TodoList from '/test/todo/dist/components/todo-list.js';
+	import TodoTitle from '/test/todo/dist/components/todo-title.js';
+
+	let counter = 0;
+	let new_todo_title = '';
+	let todo = [];
+
+	function addTodo(arg) {
+		todo.push({
+			id: Date.now(),
+			title: new_todo_title,
+		});
+
+		new_todo_title = '';
+	}
+</script>
+
+<!--
+<script type="module">
 	import TodoTitle from '/test/todo/dist/components/todo-title.js';
 	import TodoList from '/test/todo/dist/components/todo-list.js';
 
-	const new_todo_title = ref('');
-	const todo = reactive([]);
+	// non-reactive data
+	const title = 'Todo';
 
+	// reactive data (refs)
+	let new_todo_title = '';
+	let todo = [ 1,2,3 ];
+	let [ todo0 ] = todo;
+
+	// props
+	// validating using valibot, for example
+	const { user_id, email } = defineProps({
+		user_id: number([ minValue(1) ]),
+		email: string([ email() ]),
+	});
+
+	// computed
+	// no function, just mention the refs in the expression
+	const todo_count = todo.length;
+
+	// methods
 	function addTodo() {
 		todo.push({
 			id: Date.now(),
-			title: new_todo_title.value,
+			title: new_todo_title,
 		});
-		new_todo_title.value = '';
+		new_todo_title = '';
 	}
 </script>
+-->
 
 <style>
 	cu-todo {

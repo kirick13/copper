@@ -1,54 +1,44 @@
 
-import { getAstCreateElement }       from './template-compiler/ast/create-element.js';
-import { getAstCreateTextNode }      from './template-compiler/ast/create-text-node.js';
-import { getAstNodesAppend }         from './template-compiler/ast/node-append.js';
-import { getAstReactiveTextNode }    from './template-compiler/ast/reactive-text-node.js';
-import { getAstVariableDeclaration } from './template-compiler/ast/variable-declaration.js';
+import { getAstCreateElement }      from './template-compiler/ast/create-element.js';
+import { getAstSetAttributes }      from './template-compiler/ast/attributes.js';
+import {
+	getAstPlainTextNode,
+	getAstReactiveTextNode }        from './template-compiler/ast/text-node.js';
 import {
 	compileComponentAttribute,
-	compileElementAttribute }        from './template-compiler/attribute.js';
-import { templateCompilerFor }       from './template-compiler/for.js';
-import { TemplateCompilerIf }        from './template-compiler/if.js';
+	compileElementAttribute }       from './template-compiler/attribute.js';
+import { templateCompilerFor }      from './template-compiler/for.js';
+import { TemplateCompilerIf }       from './template-compiler/if.js';
 import {
-	createVariableName,
 	parseAttribute,
-	parseMustache }                  from './utils.js';
+	parseMustache }                 from './utils.js';
+import { getAstListener }           from './template-compiler/ast/listener.js';
+import { getAstAppend }             from './template-compiler/ast/append.js';
+import { getAstReactiveInputValue } from './template-compiler/ast/reactive-input-value.js';
+import { getAstReactiveProperty }   from './template-compiler/ast/reactive-property.js';
 
 export class TemplateCompiler {
-	ast = [];
-	variables;
-	options = {
-		no_append_on_root: false,
-	};
+	flow;
+	asts = [];
 
-	constructor(node, options = {}) {
-		this.options.no_append_on_root = options.no_append_on_root ?? false;
+	constructor(flow, node) {
+		this.flow = flow;
 
-		this.variables = new Set(
-			this.#convertChilds(node),
+		this.asts.push(
+			...this.#convertChilds(node),
 		);
 	}
 
-	#convertChilds(node, variable_parent_element = '$root') {
-		const variables = [];
-
-		const {
-			ast,
-			options,
-		} = this;
+	#convertChilds(node) {
+		const asts = [];
 
 		const context = {
-			variable_parent_element,
 			if: null,
 			flushIf() {
 				if (this.if) {
-					const {
-						variable,
-						ast: ast_if,
-					} = this.if.flush();
-
-					ast.push(ast_if);
-					variables.push(variable);
+					asts.push(
+						this.if.flush(),
+					);
 
 					this.if = null;
 				}
@@ -56,7 +46,7 @@ export class TemplateCompiler {
 		};
 
 		for (const element_child of node.childNodes) {
-			variables.push(
+			asts.push(
 				...this.#convertElement(
 					element_child,
 					context,
@@ -66,26 +56,11 @@ export class TemplateCompiler {
 
 		context.flushIf();
 
-		if (
-			variables.length > 0
-			&& (
-				variable_parent_element !== '$root'
-				|| options.no_append_on_root !== true
-			)
-		) {
-			ast.push(
-				getAstNodesAppend(
-					variable_parent_element,
-					variables,
-				),
-			);
-		}
-
-		return variables;
+		return asts;
 	}
 
 	#convertElement(element, context) {
-		const variables = [];
+		const asts = [];
 
 		// special element
 		if (element.nodeName === 'cu') {
@@ -98,6 +73,7 @@ export class TemplateCompiler {
 				context.flushIf();
 
 				context.if = new TemplateCompilerIf(
+					this.flow,
 					attributes.get('if'),
 					element,
 				);
@@ -116,14 +92,11 @@ export class TemplateCompiler {
 				context.flushIf();
 			}
 			else if (attributes.has('for')) {
-				const variable = createVariableName();
-				variables.push(variable);
-
-				const ast = templateCompilerFor(element, attributes);
-				this.ast.push(
-					getAstVariableDeclaration(
-						variable,
-						ast,
+				asts.push(
+					templateCompilerFor(
+						this.flow,
+						element,
+						attributes,
 					),
 				);
 			}
@@ -131,33 +104,21 @@ export class TemplateCompiler {
 		else if (element.nodeName.startsWith('#')) {
 			switch (element.nodeName) {
 				// TextNode
-				case '#text': {
+				case '#text':
 					if (element.value.trim().length > 0) {
 						context.flushIf();
 					}
 
-					const parts = parseMustache(element.value);
-
-					for (const { text, expression } of parts) {
-						const variable = createVariableName();
-						variables.push(variable);
-
+					for (const { text, expression } of parseMustache(element.value)) {
 						if (text) {
-							this.ast.push(
-								getAstVariableDeclaration(
-									variable,
-									getAstCreateTextNode(text),
-								),
+							asts.push(
+								getAstPlainTextNode.call(this, text),
 							);
 						}
 						else if (expression) {
-							this.ast.push(
-								getAstVariableDeclaration(
-									variable,
-									getAstCreateTextNode(),
-								),
-								getAstReactiveTextNode(
-									variable,
+							asts.push(
+								getAstReactiveTextNode.call(
+									this,
 									expression,
 								),
 							);
@@ -166,7 +127,7 @@ export class TemplateCompiler {
 							throw new Error('Invalid part of textNode.');
 						}
 					}
-				} break;
+					break;
 				default:
 					return [];
 			}
@@ -175,37 +136,82 @@ export class TemplateCompiler {
 		else {
 			context.flushIf();
 
-			const variable = createVariableName();
-			variables.push(variable);
-
-			this.ast.push(
-				getAstVariableDeclaration(
-					variable,
-					getAstCreateElement(element.tagName),
-				),
-			);
-
 			const is_component = element.tagName.includes('-');
 
+			const calls = {
+				attribute: [],
+				attribute_reactive: [],
+				property_reactive: [],
+				listener: [],
+				input_value_reactive: [],
+			};
+
 			for (const { name: attribute_name, value: attribute_value } of element.attrs) {
-				this.ast.push(
-					is_component
-						? compileComponentAttribute(
-							variable,
-							parseAttribute(attribute_name),
-							attribute_value,
-						)
-						: compileElementAttribute(
-							variable,
-							parseAttribute(attribute_name),
-							attribute_value,
-						),
+				const attribute_parsed = parseAttribute(attribute_name);
+
+				const result = is_component
+					? compileComponentAttribute(
+						attribute_parsed,
+						attribute_value,
+					)
+					: compileElementAttribute(
+						attribute_parsed,
+						attribute_value,
+					);
+
+				calls[result.target].push(...result.args);
+			}
+
+			let ast_element = getAstCreateElement.call(this, element.tagName);
+
+			if (calls.attribute.length + calls.attribute_reactive.length > 0) {
+				ast_element = getAstSetAttributes.call(
+					this,
+					ast_element,
+					calls.attribute,
+					calls.attribute_reactive,
 				);
 			}
 
-			this.#convertChilds(element, variable);
+			if (calls.property_reactive.length > 0) {
+				ast_element = getAstReactiveProperty.call(
+					this,
+					ast_element,
+					calls.property_reactive,
+				);
+			}
+
+			if (calls.listener.length > 0) {
+				ast_element = getAstListener.call(
+					this,
+					ast_element,
+					calls.listener,
+				);
+			}
+
+			if (calls.input_value_reactive.length > 0) {
+				ast_element = getAstReactiveInputValue.call(
+					this,
+					ast_element,
+					calls.input_value_reactive,
+				);
+			}
+
+			// this.#convertChilds(element, variable);
+			const asts_children = this.#convertChilds(element);
+			if (asts_children.length > 0) {
+				ast_element = getAstAppend.call(
+					this,
+					ast_element,
+					asts_children,
+				);
+			}
+
+			asts.push(
+				ast_element,
+			);
 		}
 
-		return variables;
+		return asts;
 	}
 }

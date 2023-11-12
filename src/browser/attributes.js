@@ -1,7 +1,7 @@
 
+import { unref }              from 'vue';
 import { BOOLEAN_ATTRIBUTES } from '../data/boolean-attributes.js';
 import { isPlainObject } 	  from '../utils.js';
-import { unref }              from './utils.js';
 
 function convertClasses(value) {
 	const classes = new Set();
@@ -28,7 +28,7 @@ function convertClasses(value) {
 }
 
 // eslint-disable-next-line unicorn/prevent-abbreviations
-export function attr(element, key, value, value_old) {
+function setAttr(element, key, value, value_old) {
 	if (BOOLEAN_ATTRIBUTES.has(key)) {
 		if (value) {
 			element.setAttribute(key, '');
@@ -49,28 +49,52 @@ export function attr(element, key, value, value_old) {
 			element.classList.remove(class_name);
 		}
 	}
-	else if (value) {
+	else if (
+		value !== null
+		&& value !== undefined
+	) {
 		element.setAttribute(key, value);
 	}
 	else {
 		element.removeAttribute(key);
 	}
 }
+
 // eslint-disable-next-line unicorn/prevent-abbreviations
-export function reactiveAttr(element, key, watcher) {
-	element._copper.watch(
-		watcher,
-		(value, value_old) => {
-			attr(
+export function attr(element, ...args) {
+	for (
+		let index = 0;
+		index < args.length;
+		index += 2
+	) {
+		const key = args[index];
+		const arg0 = args[index + 1];
+
+		if (typeof arg0 === 'function') {
+			element._copper.watch(
+				arg0,
+				(value, value_old) => {
+					attr(
+						element,
+						key,
+						unref(value),
+						unref(value_old),
+					);
+				},
+				{
+					deep: true,
+					immediate: true,
+				},
+			);
+		}
+		else {
+			setAttr(
 				element,
 				key,
-				unref(value),
-				unref(value_old),
+				arg0,
 			);
-		},
-		{
-			deep: true,
-			immediate: true,
-		},
-	);
+		}
+	}
+
+	return element;
 }

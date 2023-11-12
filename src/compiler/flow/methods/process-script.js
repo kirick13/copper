@@ -1,79 +1,179 @@
 
-export default function () {
-	for (
-		let index = 0;
-		index < this.script_ast.body.length;
-		index++
-	) {
-		const node = this.script_ast.body[index];
+import * as babelTypes from '@babel/types';
+import {
+	REF,
+	magicUnref }       from '../../magic-unref.js';
 
+export default function () {
+	// check for hoisting
+	for (const node of this.script.ast_source) {
 		switch (node.type) {
+			case 'VariableDeclaration':
+				// do nothing
+				break;
 			case 'ImportDeclaration':
-				if (node.source.type !== 'Literal') {
-					throw new Error('Unexpected node type for source of import, expected Literal.');
+				if (node.source.type !== 'StringLiteral') {
+					throw new Error('Unexpected node type for source of import, expected StringLiteral.');
 				}
 
-				this._saveImport(
+				this._processImport(
 					node.source.value,
 					node.specifiers,
 				);
-
-				this.script_ast.body.splice(
-					index,
-					1,
-				);
-				index--;
 				break;
+			case 'FunctionDeclaration':
+				this.script.variables.add(node.id.name);
+				break;
+			default:
+				throw new Error(`Unexpected "${node.type}" found at the top level of script.`);
+		}
+	}
+
+	// do actual job
+	for (const node of this.script.ast_source) {
+		switch (node.type) {
 			case 'VariableDeclaration':
-				for (const variable of parseVariableDeclaration(node)) {
-					this.state_variables.add(variable);
+				if (node.kind === 'var') {
+					throw new Error('Variable declarations with "var" are not supported.');
+				}
+
+				for (const declarator of node.declarations) {
+					processVariableDeclarator(
+						this,
+						node.kind,
+						declarator,
+					);
 				}
 				break;
 			case 'FunctionDeclaration':
-				this.state_variables.add(node.id.name);
+				magicUnref(
+					node,
+					this.script.refs,
+				);
 
-				this.script_ast.body.splice(
-					index,
-					1,
-					{
-						type: 'VariableDeclaration',
-						kind: 'const',
-						declarations: [{
-							type: 'VariableDeclarator',
-							id: {
-								type: 'Identifier',
-								name: node.id.name,
-							},
-							init: {
-								type: 'CallExpression',
-								callee: {
-									type: 'MemberExpression',
-									object: node,
-									property: {
-										type: 'Identifier',
-										name: 'bind',
-									},
-								},
-								arguments: [{
-									type: 'ThisExpression',
-								}],
-							},
-						}],
-					},
+				this.script.ast_result.push(
+					babelTypes.variableDeclaration(
+						'const',
+						[
+							babelTypes.variableDeclarator(
+								babelTypes.identifier(node.id.name),
+								babelTypes.callExpression(
+									babelTypes.memberExpression(
+										babelTypes.functionExpression(
+											node.id,
+											node.params,
+											node.body,
+											node.generator,
+											node.async,
+										),
+										babelTypes.identifier('bind'),
+									),
+									[
+										babelTypes.thisExpression(),
+									],
+								),
+							),
+						],
+					),
 				);
 				break;
-			case 'ExportDefaultDeclaration':
-				console.warn('Default export from Copper component does not make sense.');
-				break;
-			case 'ExportAllDeclaration':
-				throw new Error('Named exports from Copper component are not yet supported.');
-			case 'ExportNamedDeclaration':
-				throw new Error('Named exports from Copper component are not yet supported.');
 			// no default
 		}
 	}
 }
 
+const UNSUPPORTED_DECLARATOR_ID_TYPES = new Set([
+	'ObjectPattern',
+	'ArrayPattern',
+]);
+const FUNCTION_EXPRESSION_TYPES = new Set([
+	'ArrowFunctionExpression',
+	'FunctionExpression',
+]);
+function processVariableDeclarator(_this, kind, node) {
+	if (UNSUPPORTED_DECLARATOR_ID_TYPES.has(node.id.type)) {
+		throw new Error(`Unsupported VariableDeclarator.id.type "${node.id.type}".`);
+	}
+
+	if (node.id.type !== 'Identifier') {
+		throw new Error('Unexpected node type for VariableDeclarator.id, expected Identifier.');
+	}
+
+	const { name } = node.id;
+
+	const magic_unref_result = magicUnref(
+		node.init,
+		_this.script.refs,
+	);
+
+	_this.script.variables.add(name);
+	_this.script.refs.set(
+		name,
+		REF,
+	);
+
+	if (magic_unref_result.refs_called.size > 0) {
+		_this.script.ast_result.push(
+			babelTypes.variableDeclaration(
+				'const',
+				[
+					babelTypes.variableDeclarator(
+						babelTypes.identifier(name),
+						babelTypes.callExpression(
+							babelTypes.identifier(
+								_this._getCopperImportVariable('computed'),
+							),
+							[
+								FUNCTION_EXPRESSION_TYPES.has(node.init.type)
+									? node.init
+									: babelTypes.arrowFunctionExpression(
+										[],
+										node.init,
+									),
+							],
+						),
+					),
+				],
+			),
+		);
+	}
+	else if (kind === 'let') {
+		_this.script.ast_result.push(
+			babelTypes.variableDeclaration(
+				'const',
+				[
+					babelTypes.variableDeclarator(
+						babelTypes.identifier(name),
+						babelTypes.callExpression(
+							babelTypes.identifier(
+								_this._getCopperImportVariable('ref'),
+							),
+							[
+								node.init,
+							],
+						),
+					),
+				],
+			),
+		);
+	}
+	else if (kind === 'const') {
+		_this.script.ast_result.push(
+			babelTypes.variableDeclaration(
+				'const',
+				[
+					babelTypes.variableDeclarator(
+						babelTypes.identifier(name),
+						node.init,
+					),
+				],
+			),
+		);
+	}
+}
+
+/*
+// parses ObjectPattern and ArrayPattern
 function parseVariableDeclaration(node) {
 	const variables = [];
 
@@ -111,7 +211,7 @@ function parseVariableDeclaratorId(node) {
 				...parseVariableDeclaratorId(node.argument),
 			);
 			break;
-		case 'Property':
+		case 'ObjectProperty':
 			variables.push(
 				...parseVariableDeclaratorId(node.value),
 			);
@@ -122,3 +222,4 @@ function parseVariableDeclaratorId(node) {
 
 	return variables;
 }
+*/

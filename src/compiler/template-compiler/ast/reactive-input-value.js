@@ -1,29 +1,28 @@
 
-import { parse } from 'acorn';
+import * as t                   from '@babel/types';
+import { parseRawJsExpression } from '../../utils.js';
 
-export function getAstReactiveInputValue(element_variable, attribute_expression) {
-	return {
-		type: 'CallExpression',
-		callee: {
-			type: 'Identifier',
-			name: 'reactiveInputValue',
-		},
-		arguments: [
-			{
-				type: 'Identifier',
-				name: element_variable,
-			},
-			{
-				type: 'ArrowFunctionExpression',
-				expression: true,
-				params: [],
-				body: parse(
-					attribute_expression,
-					{
-						ecmaVersion: 'latest',
-					},
-				).body[0].expression,
-			},
+export function getAstReactiveInputValue(ast_target, [ expression ]) {
+	return t.callExpression(
+		t.identifier(
+			this.flow._getCopperImportVariable('reactiveInputValue'),
+		),
+		[
+			ast_target,
+			t.arrowFunctionExpression(
+				[],
+				parseRawJsExpression(expression),
+			),
+			t.arrowFunctionExpression(
+				[
+					t.identifier('value'),
+				],
+				t.assignmentExpression(
+					'=',
+					parseRawJsExpression(expression),
+					t.identifier('value'),
+				),
+			),
 		],
-	};
+	);
 }

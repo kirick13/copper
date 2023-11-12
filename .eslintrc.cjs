@@ -142,6 +142,7 @@ module.exports = {
 			'error',
 			{
 				allowList: {
+					arg0: true,
 					args: true,
 					CopperRef: true,
 					env: true,
@@ -149,6 +150,7 @@ module.exports = {
 					prop: true,
 					reactiveProp: true,
 					ref: true,
+					refs: true,
 				},
 			},
 		],

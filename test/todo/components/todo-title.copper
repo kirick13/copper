@@ -4,9 +4,7 @@
 </todo-title>
 
 <script type="module">
-	import { ref } from 'copper';
-
-	const { count } = this._copper.props;
+	const count = this._copper.props.count;
 </script>
 
 <style>

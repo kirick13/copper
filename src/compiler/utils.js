@@ -1,8 +1,18 @@
 
-import { parse } from 'acorn';
+import { parse as parseJs } from '@babel/parser';
 
 export function createVariableName() {
 	return `_${Math.random().toString(36).slice(2, 11)}`;
+}
+
+export function replaceObjectContents(target, source) {
+	for (const key of Object.keys(target)) {
+		delete target[key];
+	}
+
+	for (const [ key, value ] of Object.entries(source)) {
+		target[key] = value;
+	}
 }
 
 export function parseAttribute(attribute_raw) {
@@ -26,6 +36,12 @@ export function parseAttribute(attribute_raw) {
 	};
 }
 
+function addTextPart(parts, text) {
+	if (text.length > 0) {
+		parts.push({ text });
+	}
+}
+
 export function parseMustache(value) {
 	let offset = 0;
 	const parts = [];
@@ -36,9 +52,13 @@ export function parseMustache(value) {
 			break;
 		}
 
-		parts.push({
-			text: value.slice(offset, index_start),
-		});
+		addTextPart(
+			parts,
+			value.slice(
+				offset,
+				index_start,
+			),
+		);
 
 		const index_end = value.indexOf('}}', index_start);
 		if (index_end === -1) {
@@ -55,12 +75,10 @@ export function parseMustache(value) {
 		offset = index_end + 2;
 	}
 
-	{
-		const text = value.slice(offset);
-		if (text.length > 0) {
-			parts.push({ text });
-		}
-	}
+	addTextPart(
+		parts,
+		value.slice(offset),
+	);
 
 	// console.log(parts);
 
@@ -68,10 +86,10 @@ export function parseMustache(value) {
 }
 
 export function parseRawJsExpression(rawjs_code) {
-	return parse(
+	return parseJs(
 		rawjs_code,
 		{
 			ecmaVersion: 'latest',
 		},
-	).body[0].expression;
+	).program.body[0].expression;
 }

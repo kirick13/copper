@@ -4,7 +4,7 @@ function processNamedImports(named) {
 	for (const [ variable_exported, variables_inner ] of named.entries()) {
 		for (const variable_inner of variables_inner) {
 			properties.push({
-				type: 'Property',
+				type: 'ObjectProperty',
 				kind: 'init',
 				shorthand: variable_exported === variable_inner,
 				key: {
@@ -22,8 +22,9 @@ function processNamedImports(named) {
 	return properties;
 }
 
-export default function () {
-	const ast_imports = [];
+export default function flowBuildImports() {
+	const ast = [];
+	const ast_pseudo_imports = [];
 
 	for (
 		const [
@@ -33,7 +34,7 @@ export default function () {
 				namespace,
 				named,
 			},
-		] of this.imports
+		] of this.script.imports
 	) {
 		const ast_import_specifiers = [];
 		const ast_variable_declarations = [];
@@ -103,18 +104,18 @@ export default function () {
 		}
 
 		if (ast_import_specifiers.length > 0) {
-			ast_imports.push({
+			ast.push({
 				type: 'ImportDeclaration',
 				specifiers: ast_import_specifiers,
 				source: {
-					type: 'Literal',
+					type: 'StringLiteral',
 					value: source,
 				},
 			});
 		}
 
 		if (ast_variable_declarations.length > 0) {
-			this.ast_pseudo_imports.push({
+			ast_pseudo_imports.push({
 				type: 'VariableDeclaration',
 				kind: 'const',
 				declarations: ast_variable_declarations,
@@ -122,5 +123,9 @@ export default function () {
 		}
 	}
 
-	this.result_ast_body.push(...ast_imports);
+	if (ast_pseudo_imports.length > 0) {
+		this.script.ast_result.unshift(...ast_pseudo_imports);
+	}
+
+	return ast;
 }

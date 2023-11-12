@@ -24,7 +24,7 @@ export function getAstDefineCustomElement(tag_name, class_name) {
 			},
 			arguments: [
 				{
-					type: 'Literal',
+					type: 'StringLiteral',
 					value: tag_name,
 				},
 				{

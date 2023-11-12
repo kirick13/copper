@@ -26,21 +26,20 @@ export class CopperElement extends HTMLElement {
 	}
 
 	#is_ready = false;
-	_init(state) {
-		this._render(
-			this.root,
-			state,
-		);
+	init(state) {
+		this.render(state);
 	}
 
-	_render() {
-		throw new Error('No render method found.');
+	render(...elements) {
+		this.root.append(
+			...elements,
+		);
 	}
 
 	connectedCallback() {
 		if (!this.#is_ready) {
 			this.#is_ready = true;
-			this._init();
+			this.init();
 		}
 
 		this.onMount?.();

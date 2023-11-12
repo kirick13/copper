@@ -1,4 +1,5 @@
 
+import { unref }       from 'vue';
 import { CopperState } from './copper-state.js';
 
 function attachCopper(element) {
@@ -13,11 +14,32 @@ export function el(tag) {
 	return element;
 }
 
-export function text(text = '') {
-	const text_node = document.createTextNode(text);
-	attachCopper(text_node);
+export function text(arg0) {
+	const is_getter = typeof arg0 === 'function';
 
-	return text_node;
+	const element = document.createTextNode(
+		is_getter
+			? ''
+			: (arg0 ?? ' '),
+	);
+	attachCopper(element);
+
+	if (is_getter) {
+		element._copper.watch(
+			arg0,
+			(value) => {
+				element.textContent = String(
+					unref(value),
+				);
+			},
+			{
+				deep: true,
+				immediate: true,
+			},
+		);
+	}
+
+	return element;
 }
 
 export function fragment() {

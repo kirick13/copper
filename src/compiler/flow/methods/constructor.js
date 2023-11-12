@@ -1,32 +1,33 @@
 
+import { parse as parseJs }   from '@babel/parser';
 import { parse as parseHtml } from 'parse5';
-import * as acorn             from 'acorn';
 
 export default function (component_source_code) {
-	const html_nodes = parseHtml(component_source_code).childNodes[0].childNodes[1].childNodes;
+	const html_nodes = parseHtml(component_source_code).childNodes.find((node) => node.nodeName === 'html').childNodes.find((node) => node.nodeName === 'body').childNodes;
 
 	for (const node of html_nodes) {
 		const tag_name = node.tagName?.toLowerCase();
 
 		if (tag_name === 'script') {
-			if (this.script_ast) {
+			if (this.script.source !== null) {
 				throw new Error('More than one <script> tag found.');
 			}
 
-			this.script_ast = acorn.parse(
-				node.childNodes[0].value,
+			this.script.source = node.childNodes[0].value;
+			this.script.ast_source = parseJs(
+				this.script.source,
 				{
 					sourceType: 'module',
-					ecmaVersion: '2023',
+					// ecmaVersion: '2023',
 				},
-			);
+			).program.body;
 		}
 		else if (tag_name === 'style') {
-			if (this.style) {
+			if (this.style.source) {
 				throw new Error('More than one <style> tag found.');
 			}
 
-			this.style = node.childNodes[0].value;
+			this.style.source = node.childNodes[0].value;
 		}
 		else if (typeof tag_name === 'string') {
 			if (this.element.nodes) {

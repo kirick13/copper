@@ -1,32 +1,24 @@
 
-import { getAstVariableDeclaration }    from '../template-compiler/ast/variable-declaration.js';
-import { TemplateCompiler }             from '../template-compiler.js';
-import {
-	createVariableName,
-	parseRawJsExpression }              from '../utils.js';
+import * as t 						 from '@babel/types';
+import { TemplateCompiler }          from '../template-compiler.js';
+import { parseRawJsExpression }      from '../utils.js';
 
-function getAstConditionalExpression(test, consequent_literal, alternate) {
-	return {
-		type: 'ConditionalExpression',
-		test,
-		consequent: {
-			type: 'Literal',
-			value: consequent_literal,
-		},
-		alternate,
-	};
+function getAstConditionalExpression(ast_test, consequent_number, ast_alternate) {
+	return t.conditionalExpression(
+		ast_test,
+		t.numericLiteral(
+			consequent_number,
+		),
+		ast_alternate,
+	);
 }
 
 function getAstAlternate() {
-	return {
-		type: 'UnaryExpression',
-		operator: '-',
-		prefix: true,
-		argument: {
-			type: 'Literal',
-			value: 1,
-		},
-	};
+	return t.unaryExpression(
+		'-',
+		t.numericLiteral(1),
+		true,
+	);
 }
 
 function replaceObjectEntries(target, source) {
@@ -40,11 +32,15 @@ function replaceObjectEntries(target, source) {
 }
 
 export class TemplateCompilerIf {
+	flow;
+
 	ast_watch;
 	#ast_last_alternate;
 	asts_outcomes = [];
 
-	constructor(rawjs_test, element) {
+	constructor(flow, rawjs_test, element) {
+		this.flow = flow;
+
 		this.#ast_last_alternate = getAstAlternate();
 
 		this.ast_watch = getAstConditionalExpression(
@@ -58,37 +54,18 @@ export class TemplateCompilerIf {
 
 	#addOutcome(element) {
 		const templateCompiler = new TemplateCompiler(
+			this.flow,
 			element,
-			{
-				no_append_on_root: true,
-			},
 		);
 
-		const ast_return = [];
-		for (const variable of templateCompiler.variables) {
-			ast_return.push({
-				type: 'Identifier',
-				name: variable,
-			});
-		}
-
-		this.asts_outcomes.push({
-			type: 'ArrowFunctionExpression',
-			params: [],
-			body: {
-				type: 'BlockStatement',
-				body: [
-					...templateCompiler.ast,
-					{
-						type: 'ReturnStatement',
-						argument: {
-							type: 'ArrayExpression',
-							elements: ast_return,
-						},
-					},
-				],
-			},
-		});
+		this.asts_outcomes.push(
+			t.arrowFunctionExpression(
+				[],
+				t.arrayExpression(
+					templateCompiler.asts,
+				),
+			),
+		);
 	}
 
 	addElseIf(rawjs_test, element) {
@@ -112,7 +89,7 @@ export class TemplateCompilerIf {
 		replaceObjectEntries(
 			this.#ast_last_alternate,
 			{
-				type: 'Literal',
+				type: 'NumericLiteral',
 				value: this.asts_outcomes.length,
 			},
 		);
@@ -121,31 +98,19 @@ export class TemplateCompilerIf {
 	}
 
 	flush() {
-		const variable = createVariableName();
-
-		return {
-			variable,
-			ast: getAstVariableDeclaration(
-				variable,
-				{
-					type: 'CallExpression',
-					callee: {
-						type: 'Identifier',
-						name: 'reactiveIf',
-					},
-					arguments: [
-						{
-							type: 'ArrowFunctionExpression',
-							params: [],
-							body: this.ast_watch,
-						},
-						{
-							type: 'ArrayExpression',
-							elements: this.asts_outcomes,
-						},
-					],
-				},
+		return t.callExpression(
+			t.identifier(
+				this.flow._getCopperImportVariable('reactiveIf'),
 			),
-		};
+			[
+				t.arrowFunctionExpression(
+					[],
+					this.ast_watch,
+				),
+				t.arrayExpression(
+					this.asts_outcomes,
+				),
+			],
+		);
 	}
 }

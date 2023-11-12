@@ -3,7 +3,7 @@ export function getAstStateProperties(state_properties) {
 	const properties = [];
 	for (const variable of state_properties) {
 		properties.push({
-			type: 'Property',
+			type: 'ObjectProperty',
 			kind: 'init',
 			shorthand: true,
 			key: {

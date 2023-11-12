@@ -3,20 +3,27 @@ import {
 	ref,
 	readonly } from 'vue';
 
-export function reactiveProp(element, key, watcher) {
+export function reactiveProp(element, ...args) {
 	const copperState = element._copper;
 
-	const prop = ref();
+	for (let index = 0; index < args.length; index += 2) {
+		const key = args[index];
+		const watcher = args[index + 1];
 
-	copperState.watch(
-		watcher,
-		(value) => {
-			prop.value = value;
-		},
-		{
-			immediate: true,
-		},
-	);
+		const prop = ref();
 
-	copperState.props[key] = readonly(prop);
+		copperState.watch(
+			watcher,
+			(value) => {
+				prop.value = value;
+			},
+			{
+				immediate: true,
+			},
+		);
+
+		copperState.props[key] = readonly(prop);
+	}
+
+	return element;
 }

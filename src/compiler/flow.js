@@ -1,16 +1,19 @@
 
-import * as astring                  from 'astring';
+import generateJs                    from '@babel/generator';
+import * as t                        from '@babel/types';
 import { TemplateCompiler }          from '../compiler/template-compiler.js';
 import { getAstProgram }             from './ast/program.js';
 import { getAstClass }               from './flow/ast/class.js';
 import { getAstDefineCustomElement } from './flow/ast/define-custom-element.js';
-import { getAstsImports }            from './flow/ast/imports.js';
+import { getAstCopperImports }       from './flow/ast/copper-imports.js';
 import { getAstStateProperties }     from './flow/ast/state-properties.js';
 import { getAstStyle }               from './flow/ast/style.js';
+import flowBuildImports			     from './flow/methods/build-imports.js';
 import flowConstructor               from './flow/methods/constructor.js';
+import flowProcessImport 		     from './flow/methods/process-import.js';
 import flowProcessScript             from './flow/methods/process-script.js';
-import flowSaveImport                from './flow/methods/save-import.js';
-import flowUseImports                from './flow/methods/use-imports.js';
+import { createVariableName } from './utils.js';
+import { magicUnref } from './magic-unref.js';
 
 function componentNameToClassName(component_name) {
 	if (component_name.startsWith('cu-')) {
@@ -26,16 +29,21 @@ function componentNameToClassName(component_name) {
 export class CompilerFlow {
 	element = {
 		node: null,
-		tag_name: '',
+		tag_name: null,
 	};
 
-	imports = new Map();
-	state_variables = new Set();
-	script_ast;
-	style;
+	script = {
+		source: null,
+		ast_source: null,
+		ast_result: [],
+		imports: new Map(),
+		variables: new Set(),
+		refs: new Map(),
+	};
 
-	ast_pseudo_imports = [];
-	result_ast_body = [];
+	style = {
+		source: null,
+	};
 
 	constructor(component_source_code) {
 		flowConstructor.call(
@@ -47,64 +55,102 @@ export class CompilerFlow {
 	}
 
 	_processScript() {
-		if (this.script_ast) {
+		if (this.script.source) {
 			flowProcessScript.call(this);
 		}
 
-		// add "imports" back
-		this._useImports();
+		this.templateCompiler = new TemplateCompiler(
+			this,
+			this.element.node,
+		);
 	}
 
-	_saveImport(source_name, specifiers) {
-		flowSaveImport.call(
+	_processImport(source_name, specifiers) {
+		flowProcessImport.call(
 			this,
 			source_name,
 			specifiers,
 		);
 	}
 
-	_useImports() {
-		flowUseImports.call(this);
-
-		this.#prepareResult();
+	_buildImports() {
+		return flowBuildImports.call(this);
 	}
 
-	#prepareResult() {
-		const { node, tag_name } = this.element;
+	_copper_imports = new Map();
+	_getCopperImportVariable(variable) {
+		if (this._copper_imports.has(variable) === false) {
+			const variable_shadow = `_${variable}${createVariableName()}`;
+
+			this._copper_imports.set(
+				variable,
+				variable_shadow,
+			);
+
+			return variable_shadow;
+		}
+
+		return this._copper_imports.get(variable);
+	}
+
+	encode() {
+		const {
+			node,
+			tag_name,
+		} = this.element;
 		const class_name = `Copper${componentNameToClassName(tag_name)}Element`;
 
-		this.result_ast_body.push(
-			...getAstsImports(),
-			getAstStyle(
-				this.style,
+		const asts_imports = this._buildImports();
+
+		const ast_style = getAstStyle(
+			this,
+			this.style.source,
+		);
+
+		const ast_class = getAstClass.call(
+			this,
+			class_name,
+			// variables in the form of ObjectPattern
+			getAstStateProperties(
+				this.script.variables,
 			),
-			getAstClass(
-				class_name,
-				getAstStateProperties(
-					this.state_variables,
+			// init script
+			this.script.ast_result,
+			// template script
+			magicUnref(
+				t.expressionStatement(
+					t.callExpression(
+						t.memberExpression(
+							t.super(),
+							t.identifier('render'),
+						),
+						this.templateCompiler.asts,
+					),
 				),
-				[
-					...this.ast_pseudo_imports,
-					...(this.script_ast?.body ?? []),
-				],
-				[
-					...this.ast_pseudo_imports,
-					...(new TemplateCompiler(node)).ast,
-				],
+				this.script.refs,
+			).ast,
+		);
+
+		const ast = [
+			// add Copper imports
+			getAstCopperImports(
+				this._copper_imports,
 			),
+			// add script imports
+			...asts_imports,
+			// add style
+			ast_style,
+			// main class
+			ast_class,
+			// define ustom element
 			getAstDefineCustomElement(
 				tag_name,
 				class_name,
 			),
-		);
+		];
 
-		this.result = astring.generate(
-			getAstProgram(
-				this.result_ast_body,
-			),
-			{
-				ecmaVersion: '2023',
-			},
-		);
+		return generateJs(
+			getAstProgram(ast),
+		).code;
 	}
 }

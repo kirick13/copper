@@ -1,46 +1,25 @@
-import * as _axtq0xvna from "copper";
-import {el, text, fragment, attr, reactiveAttr, reactiveInputValue, reactiveTextNode, reactiveIf, reactiveFor, reactiveProp, listen, CopperElement} from "copper";
+import { text as _text_8kxg9udrg, el as _el_lateg9qk4, attr as _attr_ukuvzdktf, listen as _listen_vqa4fzhem, append as _append_qfm4kndxs, reactiveFor as _reactiveFor_nffhcdz0p, CopperElement as _CopperElement_j0shv7kzp } from "copper";
 {
-  const el_style = el("style");
+  const el_style = _el_lateg9qk4("style");
   el_style.innerText = "\n\ttodo-list {\n\t\tdisplay: block;\n\t\tpadding: 10px;\n\t\tborder: 1px solid #ccc;\n\t\tborder-radius: 5px;\n\t}\n";
   document.head.append(el_style);
 }
-export default class CopperTodoListElement extends CopperElement {
-  _init() {
-    const {emit} = _axtq0xvna;
-    const {todo} = this._copper.props;
+export default class CopperTodoListElement extends _CopperElement_j0shv7kzp {
+  init() {
+    const todo = this._copper.props.todo;
     const remove = function remove(index) {
       this.emit('remove', index);
     }.bind(this);
-    super._init({
-      todo,
-      remove
+    super.init({
+      remove,
+      todo
     });
   }
-  _render($root, {todo, remove}) {
-    const {emit} = _axtq0xvna;
-    const _jsf3mg6jd = text("\n\t");
-    const _xqbp0cr5c = reactiveFor(() => todo.value, (task, index) => task.id, (task, index) => {
-      const _bkjh40sdm = text("\n\t\t");
-      const _98frzaemx = el("div");
-      const _7ljnbcku2 = text("\n\t\t\tTask #");
-      const _ew217o57p = text();
-      reactiveTextNode(_ew217o57p, () => index.value + 1)
-      const _t93riab0l = text(": ");
-      const _bbo8ib3r1 = text();
-      reactiveTextNode(_bbo8ib3r1, () => task.value.title)
-      const _8btiyvw8z = text("\n\t\t\t");
-      const _x088qr8yr = el("input");
-      attr(_x088qr8yr, "type", "button")
-      attr(_x088qr8yr, "value", "Remove")
-      listen(_x088qr8yr, "click", $event => remove(index.value), [])
-      const _90am42ja4 = text("\n\t\t");
-      _98frzaemx.append(_7ljnbcku2, _ew217o57p, _t93riab0l, _bbo8ib3r1, _8btiyvw8z, _x088qr8yr, _90am42ja4);
-      const _yoa7mq8ms = text("\n\t");
-      return [_bkjh40sdm, _98frzaemx, _yoa7mq8ms];
-    });
-    const _ve3v6cal4 = text("\n");
-    $root.append(_jsf3mg6jd, _xqbp0cr5c, _ve3v6cal4);
+  render({
+    remove,
+    todo
+  }) {
+    super.render(_text_8kxg9udrg(), _reactiveFor_nffhcdz0p(() => todo.value, (task, index) => task.id, (task, index) => [_text_8kxg9udrg(), _append_qfm4kndxs(_el_lateg9qk4("div"), _text_8kxg9udrg(" Task #"), _text_8kxg9udrg(() => index.value + 1), _text_8kxg9udrg(": "), _text_8kxg9udrg(() => task.value.title), _text_8kxg9udrg(), _listen_vqa4fzhem(_attr_ukuvzdktf(_el_lateg9qk4("input"), "type", "button", "value", "Remove"), "click", $event => remove(index.value), []), _text_8kxg9udrg()), _text_8kxg9udrg()]), _text_8kxg9udrg());
   }
 }
 window.customElements.define("todo-list", CopperTodoListElement);

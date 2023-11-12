@@ -1,11 +1,9 @@
 
-import { unref } from '../utils.js';
-
-export function reactiveInputValue(element, watcher) {
+export function reactiveInputValue(element, watcher, setter) {
 	element._copper.watch(
 		watcher,
 		(value) => {
-			element.value = unref(value);
+			element.value = value;
 		},
 		{
 			deep: true,
@@ -16,7 +14,9 @@ export function reactiveInputValue(element, watcher) {
 	element._copper.listen(
 		'input',
 		() => {
-			watcher().value = element.value;
+			setter(element.value);
 		},
 	);
+
+	return element;
 }
