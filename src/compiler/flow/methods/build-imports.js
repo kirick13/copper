@@ -24,7 +24,6 @@ function processNamedImports(named) {
 
 export default function flowBuildImports() {
 	const ast = [];
-	const ast_pseudo_imports = [];
 
 	for (
 		const [
@@ -115,16 +114,12 @@ export default function flowBuildImports() {
 		}
 
 		if (ast_variable_declarations.length > 0) {
-			ast_pseudo_imports.push({
+			this.script.ast_imports.push({
 				type: 'VariableDeclaration',
 				kind: 'const',
 				declarations: ast_variable_declarations,
 			});
 		}
-	}
-
-	if (ast_pseudo_imports.length > 0) {
-		this.script.ast_result.unshift(...ast_pseudo_imports);
 	}
 
 	return ast;

@@ -36,7 +36,9 @@ export class CompilerFlow {
 		source: null,
 		ast_source: null,
 		ast_result: [],
+		ast_constructor: [],
 		imports: new Map(),
+		ast_imports: [],
 		variables: new Set(),
 		refs: new Map(),
 	};
@@ -106,26 +108,35 @@ export class CompilerFlow {
 
 		const ast_class = getAstClass.call(
 			this,
-			class_name,
-			// variables in the form of ObjectPattern
-			getAstStateProperties(
-				this.script.variables,
-			),
-			// init script
-			this.script.ast_result,
-			// template script
-			magicUnref(
-				t.expressionStatement(
-					t.callExpression(
-						t.memberExpression(
-							t.super(),
-							t.identifier('render'),
-						),
-						this.templateCompiler.asts,
-					),
+			{
+				class_name,
+				// variables in the form of ObjectPattern
+				ast_state_properties: getAstStateProperties(
+					this.script.variables,
 				),
-				this.script.refs,
-			).ast,
+				asts_constructor: (this.script.ast_constructor.length > 0) ? [
+					...this.script.ast_imports,
+					...this.script.ast_constructor,
+				] : null,
+				// init script
+				asts_script: [
+					...this.script.ast_imports,
+					...this.script.ast_result,
+				],
+				// template script
+				ast_render: magicUnref(
+					t.expressionStatement(
+						t.callExpression(
+							t.memberExpression(
+								t.super(),
+								t.identifier('render'),
+							),
+							this.templateCompiler.asts,
+						),
+					),
+					this.script.refs,
+				).ast,
+			},
 		);
 
 		const ast = [

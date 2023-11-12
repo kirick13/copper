@@ -2248,7 +2248,9 @@ class CopperState {
 
 // src/browser/element.js
 var attachCopper = function(element) {
-  element._copper ??= new CopperState(element);
+  if (!element._copper) {
+    element._copper = new CopperState(element);
+  }
 };
 function el(tag) {
   const element = document.createElement(tag);
@@ -2541,11 +2543,18 @@ function reactiveProp(element3, ...args) {
     const key = args[index];
     const watcher = args[index + 1];
     const prop = ref();
-    copperState.watch(watcher, (value) => {
-      console.log(copperState.propsValidators);
-      prop.value = value;
-    }, {
-      immediate: true
+    const validator = copperState.propsValidators?.[key];
+    const is_validator_function = typeof validator === "function";
+    setTimeout(() => {
+      copperState.watch(watcher, (value) => {
+        if (is_validator_function && validator(value) !== true) {
+          console.error(`Invalid value for property ${key} on component`, element3);
+        } else {
+          prop.value = value;
+        }
+      }, {
+        immediate: true
+      });
     });
     copperState.props[key] = readonly(prop);
   }

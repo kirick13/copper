@@ -4,10 +4,15 @@
 </todo-title>
 
 <script type="module">
-	import { number, minValue } from 'valibot';
+	import { number, maxValue, safeParse } from 'valibot';
 
 	const { count } = defineProps({
-		count: number([ minValue(0) ]),
+		count: (value) => safeParse(
+			number([
+				maxValue(10),
+			]),
+			value,
+		).success,
 	});
 </script>
 

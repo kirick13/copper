@@ -1,8 +1,8 @@
 
-import * as t from '@babel/types';
+import * as t    from '@babel/types';
 import {
 	REF,
-	magicUnref }       from '../../magic-unref.js';
+	magicUnref } from '../../magic-unref.js';
 
 export default function () {
 	// check for hoisting
@@ -101,7 +101,7 @@ function processVariableDeclarator(_this, kind, node) {
 			throw new Error('You have to use object desctructuring when using defineProps macro.');
 		}
 
-		_this.script.ast_result.push(
+		_this.script.ast_constructor.push(
 			t.expressionStatement(
 				t.assignmentExpression(
 					'=',

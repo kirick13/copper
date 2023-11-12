@@ -15,17 +15,25 @@ export function reactiveProp(element, ...args) {
 		const watcher = args[index + 1];
 
 		const prop = ref();
+		const validator = copperState.propsValidators?.[key];
+		const is_validator_function = typeof validator === 'function';
 
-		copperState.watch(
-			watcher,
-			(value) => {
-				console.log(copperState.propsValidators);
-				prop.value = value;
-			},
-			{
-				immediate: true,
-			},
-		);
+		setTimeout(() => {
+			copperState.watch(
+				watcher,
+				(value) => {
+					if (is_validator_function && validator(value) !== true) {
+						console.error(`Invalid value for property ${key} on component`, element);
+					}
+					else {
+						prop.value = value;
+					}
+				},
+				{
+					immediate: true,
+				},
+			);
+		});
 
 		copperState.props[key] = readonly(prop);
 	}

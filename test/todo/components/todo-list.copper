@@ -16,10 +16,18 @@
 </todo-list>
 
 <script type="module">
-	import { array } from 'valibot';
+	import { number, string, array, object, safeParse } from 'valibot';
 
 	const { todo } = defineProps({
-		todo: array(),
+		todo: (value) => safeParse(
+			array(
+				object({
+					id: number(),
+					title: string(),
+				}),
+			),
+			value,
+		).success,
 	});
 
 	function remove(index) {
