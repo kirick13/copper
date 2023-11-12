@@ -28,9 +28,7 @@ export function text(arg0) {
 		element._copper.watch(
 			arg0,
 			(value) => {
-				element.textContent = String(
-					unref(value),
-				);
+				element.textContent = String(value);
 			},
 			{
 				deep: true,

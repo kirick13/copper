@@ -2,7 +2,7 @@
 /* eslint-disable no-await-in-loop */
 
 import { readFile } from 'node:fs/promises';
-import { compile } from '../../src/compiler.js';
+import { compile }  from '../../src/compiler.js';
 
 for (const filename of new Set([
 	'components/todo.copper',
@@ -18,7 +18,7 @@ for (const filename of new Set([
 	);
 
 	const component_code = compile(source_code);
-	console.log(component_code);
+	// console.log(component_code);
 
 	await Bun.write(
 		new URL(

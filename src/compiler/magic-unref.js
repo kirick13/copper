@@ -66,32 +66,24 @@ export function magicUnref(ast, refs) {
 					throw new Error('Assignment to anything other than Identifier is not supported yet.');
 				}
 
-				console.log('>', node_left.name);
-				console.log('hasBinding', path.scope.hasBinding(node_left.name));
-
-				// path.node.left = t.memberExpression(
-				// 	t.identifier("name"),
-				// 	t.identifier("value"),
-				// );
-
-				if (path.scope.hasBinding(node_left.name) === false) {
+				const variable = node_left.name;
+				if (
+					path.scope.hasBinding(variable) === false
+					&& refs.has(variable)
+				) {
 					path.node.left = t.memberExpression(
-						t.identifier(node_left.name),
+						t.identifier(variable),
 						t.identifier('value'),
 					);
 
 					path.node.left.__copper_skip = true;
 				}
 			},
-			UpdateExpression(path) {
-				// TODO:
-			},
+			// UpdateExpression(path) {
+			// 	// TODO:
+			// },
 		},
 	);
 
 	return result;
 }
-
-// export function magicUnrefExpression(refs) {
-
-// }

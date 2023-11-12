@@ -4,7 +4,11 @@
 </todo-title>
 
 <script type="module">
-	const count = this._copper.props.count;
+	import { number, minValue } from 'valibot';
+
+	const { count } = defineProps({
+		count: number([ minValue(0) ]),
+	});
 </script>
 
 <style>

@@ -94,10 +94,7 @@ export class CompilerFlow {
 	}
 
 	encode() {
-		const {
-			node,
-			tag_name,
-		} = this.element;
+		const { tag_name } = this.element;
 		const class_name = `Copper${componentNameToClassName(tag_name)}Element`;
 
 		const asts_imports = this._buildImports();

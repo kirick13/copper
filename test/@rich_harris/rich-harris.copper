@@ -1,0 +1,11 @@
+
+<script type="module">
+	let count = 0;
+	const double = count * 2;
+</script>
+
+<rich-harris>
+	<div @click="count++">
+		{{ count }} {{ double }}
+	</div>
+</rich-harris>

@@ -2261,7 +2261,7 @@ function text(arg0) {
   attachCopper(element);
   if (is_getter) {
     element._copper.watch(arg0, (value) => {
-      element.textContent = String(unref(value));
+      element.textContent = String(value);
     }, {
       deep: true,
       immediate: true
@@ -2542,6 +2542,7 @@ function reactiveProp(element3, ...args) {
     const watcher = args[index + 1];
     const prop = ref();
     copperState.watch(watcher, (value) => {
+      console.log(copperState.propsValidators);
       prop.value = value;
     }, {
       immediate: true

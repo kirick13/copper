@@ -1,5 +1,5 @@
 
-import * as babelTypes from '@babel/types';
+import * as t from '@babel/types';
 import {
 	REF,
 	magicUnref }       from '../../magic-unref.js';
@@ -52,24 +52,24 @@ export default function () {
 				);
 
 				this.script.ast_result.push(
-					babelTypes.variableDeclaration(
+					t.variableDeclaration(
 						'const',
 						[
-							babelTypes.variableDeclarator(
-								babelTypes.identifier(node.id.name),
-								babelTypes.callExpression(
-									babelTypes.memberExpression(
-										babelTypes.functionExpression(
+							t.variableDeclarator(
+								t.identifier(node.id.name),
+								t.callExpression(
+									t.memberExpression(
+										t.functionExpression(
 											node.id,
 											node.params,
 											node.body,
 											node.generator,
 											node.async,
 										),
-										babelTypes.identifier('bind'),
+										t.identifier('bind'),
 									),
 									[
-										babelTypes.thisExpression(),
+										t.thisExpression(),
 									],
 								),
 							),
@@ -91,84 +91,162 @@ const FUNCTION_EXPRESSION_TYPES = new Set([
 	'FunctionExpression',
 ]);
 function processVariableDeclarator(_this, kind, node) {
-	if (UNSUPPORTED_DECLARATOR_ID_TYPES.has(node.id.type)) {
-		throw new Error(`Unsupported VariableDeclarator.id.type "${node.id.type}".`);
-	}
+	// props
+	if (
+		node.init.type === 'CallExpression'
+		&& node.init.callee.type === 'Identifier'
+		&& node.init.callee.name === 'defineProps'
+	) {
+		if (node.id.type !== 'ObjectPattern') {
+			throw new Error('You have to use object desctructuring when using defineProps macro.');
+		}
 
-	if (node.id.type !== 'Identifier') {
-		throw new Error('Unexpected node type for VariableDeclarator.id, expected Identifier.');
-	}
-
-	const { name } = node.id;
-
-	const magic_unref_result = magicUnref(
-		node.init,
-		_this.script.refs,
-	);
-
-	_this.script.variables.add(name);
-	_this.script.refs.set(
-		name,
-		REF,
-	);
-
-	if (magic_unref_result.refs_called.size > 0) {
 		_this.script.ast_result.push(
-			babelTypes.variableDeclaration(
-				'const',
-				[
-					babelTypes.variableDeclarator(
-						babelTypes.identifier(name),
-						babelTypes.callExpression(
-							babelTypes.identifier(
-								_this._getCopperImportVariable('computed'),
-							),
-							[
-								FUNCTION_EXPRESSION_TYPES.has(node.init.type)
-									? node.init
-									: babelTypes.arrowFunctionExpression(
-										[],
-										node.init,
+			t.expressionStatement(
+				t.assignmentExpression(
+					'=',
+					t.memberExpression(
+						t.memberExpression(
+							t.thisExpression(),
+							t.identifier('_copper'),
+						),
+						t.identifier('propsValidators'),
+					),
+					node.init.arguments[0],
+				),
+			),
+		);
+
+		for (const property of node.id.properties) {
+			if (
+				property.type !== 'ObjectProperty'
+				|| property.key.type !== 'Identifier'
+				|| property.value.type !== 'Identifier'
+			) {
+				throw new Error('You have to use single-level object desctructuring when using defineProps macro.');
+			}
+
+			const prop_name = property.key.name;
+			const prop_variable = property.value.name;
+
+			_this.script.variables.add(prop_variable);
+			_this.script.refs.set(
+				prop_variable,
+				REF,
+			);
+
+			_this.script.ast_result.push(
+				t.variableDeclaration(
+					'const',
+					[
+						t.variableDeclarator(
+							t.identifier(prop_variable),
+							t.memberExpression(
+								t.memberExpression(
+									t.memberExpression(
+										t.thisExpression(),
+										t.identifier('_copper'),
 									),
-							],
-						),
-					),
-				],
-			),
-		);
-	}
-	else if (kind === 'let') {
-		_this.script.ast_result.push(
-			babelTypes.variableDeclaration(
-				'const',
-				[
-					babelTypes.variableDeclarator(
-						babelTypes.identifier(name),
-						babelTypes.callExpression(
-							babelTypes.identifier(
-								_this._getCopperImportVariable('ref'),
+									t.identifier('props'),
+								),
+								t.identifier(prop_name),
 							),
-							[
-								node.init,
-							],
 						),
-					),
-				],
-			),
-		);
+					],
+				),
+			);
+		}
+
+		_this.script.ast_result.push();
 	}
-	else if (kind === 'const') {
-		_this.script.ast_result.push(
-			babelTypes.variableDeclaration(
-				'const',
-				[
-					babelTypes.variableDeclarator(
-						babelTypes.identifier(name),
-						node.init,
-					),
-				],
-			),
+	else {
+		if (UNSUPPORTED_DECLARATOR_ID_TYPES.has(node.id.type)) {
+			throw new Error(`Unsupported VariableDeclarator.id.type "${node.id.type}".`);
+		}
+		if (node.id.type !== 'Identifier') {
+			throw new Error('Unexpected node type for VariableDeclarator.id, expected Identifier.');
+		}
+
+		const { name } = node.id;
+
+		const magic_unref_result = magicUnref(
+			node.init,
+			_this.script.refs,
 		);
+
+		_this.script.variables.add(name);
+
+		// computed
+		if (magic_unref_result.refs_called.size > 0) {
+			_this.script.refs.set(
+				name,
+				REF,
+			);
+
+			_this.script.ast_result.push(
+				t.variableDeclaration(
+					'const',
+					[
+						t.variableDeclarator(
+							t.identifier(name),
+							t.callExpression(
+								t.identifier(
+									_this._getCopperImportVariable('computed'),
+								),
+								[
+									FUNCTION_EXPRESSION_TYPES.has(node.init.type)
+										? node.init
+										: t.arrowFunctionExpression(
+											[],
+											node.init,
+										),
+								],
+							),
+						),
+					],
+				),
+			);
+		}
+		// ref
+		else if (kind === 'let') {
+			_this.script.refs.set(
+				name,
+				REF,
+			);
+
+			_this.script.ast_result.push(
+				t.variableDeclaration(
+					'const',
+					[
+						t.variableDeclarator(
+							t.identifier(name),
+							t.callExpression(
+								t.identifier(
+									_this._getCopperImportVariable('ref'),
+								),
+								[
+									node.init,
+								],
+							),
+						),
+					],
+				),
+			);
+		}
+		// constant
+		else if (kind === 'const') {
+			_this.script.ast_result.push(
+				t.variableDeclaration(
+					'const',
+					[
+						t.variableDeclarator(
+							t.identifier(name),
+							node.init,
+						),
+					],
+				),
+			);
+		}
 	}
 }
 

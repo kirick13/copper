@@ -16,7 +16,11 @@
 </todo-list>
 
 <script type="module">
-	const todo = this._copper.props.todo;
+	import { array } from 'valibot';
+
+	const { todo } = defineProps({
+		todo: array(),
+	});
 
 	function remove(index) {
 		this.emit(
