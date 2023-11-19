@@ -10,4 +10,4 @@ export { listen } from './browser/listen.js';
 
 export { CopperElement } from './browser/copper-element.js';
 
-export { ref, reactive, computed, watch } from 'vue';
+export { ref, reactive, computed, watch, unref } from 'vue';

@@ -21,7 +21,7 @@ export function getAstCopperImports(imports) {
 		specifiers,
 		source: {
 			type: 'StringLiteral',
-			value: 'copper',
+			value: '@kirick/copper',
 		},
 	};
 }

@@ -2608,10 +2608,22 @@ function listen(element3, ...args) {
   return element3;
 }
 // src/browser/copper-element.js
+var attachCss = function(name, css) {
+  const style = document.createElement("style");
+  style.setAttribute("copper-component", name);
+  style.textContent = css;
+  document.head.append(style);
+};
+
 class CopperElement extends HTMLElement {
   root;
   constructor(options = {}) {
     super();
+    if (typeof this.constructor.css === "string") {
+      attachCss(this.tagName.toLowerCase(), this.constructor.css);
+      delete this.constructor.css;
+    }
+    this.innerHTML = "";
     const option_shadow = options.shadow ?? "none";
     switch (option_shadow) {
       case "open":
@@ -2652,6 +2664,7 @@ class CopperElement extends HTMLElement {
 }
 export {
   watch,
+  unref,
   text,
   ref,
   reactiveProp,

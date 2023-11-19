@@ -58,7 +58,7 @@ export function templateCompilerFor(flow, element, attributes) {
 				t.arrayExpression(
 					magicUnref(
 						templateCompiler.asts,
-						refs,
+						flow,
 					).ast,
 				),
 			),

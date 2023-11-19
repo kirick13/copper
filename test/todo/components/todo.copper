@@ -29,8 +29,10 @@
 </cu-todo>
 
 <script type="module">
-	import TodoList from '/test/todo/dist/components/todo-list.js';
-	import TodoTitle from '/test/todo/dist/components/todo-title.js';
+	// import * as valibot from 'valibot';
+	import validot_def, { string, string as string2 } from 'valibot';
+	// import TodoList from '/test/todo/dist/components/todo-list.js';
+	// import TodoTitle from '/test/todo/dist/components/todo-title.js';
 
 	let counter = 0;
 	let new_todo_title = '';

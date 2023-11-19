@@ -5,7 +5,7 @@
 		key="task.id"
 		>
 		<div>
-			Task #{{ index + 1 }}: {{ task.title }}
+			Task #{{ index + 1 }} / {{ todo_count }}: {{ task.title }}
 			<input
 				type="button"
 				value="Remove"
@@ -29,6 +29,8 @@
 			value,
 		).success,
 	});
+
+	const todo_count = todo.length;
 
 	function remove(index) {
 		this.emit(

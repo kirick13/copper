@@ -1,20 +1,8 @@
-import { text as _text_4pty1u2mj, el as _el_6k35yt4im, attr as _attr_6jvt9whqg, listen as _listen_n39u0aj8m, append as _append_4qadjd0up, reactiveFor as _reactiveFor_680kwy19b, CopperElement as _CopperElement_kq3y5fkma } from "copper";
-import * as _4tuslc0gs from "valibot";
-{
-  const _yx81ho6d1 = _el_6k35yt4im("style");
-  _yx81ho6d1.innerText = "\n\ttodo-list {\n\t\tdisplay: block;\n\t\tpadding: 10px;\n\t\tborder: 1px solid #ccc;\n\t\tborder-radius: 5px;\n\t}\n";
-  document.head.append(_yx81ho6d1);
-}
-export default class CopperTodoListElement extends _CopperElement_kq3y5fkma {
+import { computed as _computed_b27hc5olo, text as _text_6546w19qu, el as _el_eqz3mcbdw, attr as _attr_gpqot6kbp, listen as _listen_vrgpxs2cn, append as _append_t526e9bi4, reactiveFor as _reactiveFor_ztaqf9a4u, CopperElement as _CopperElement_eygjgs206 } from "@kirick/copper";
+export default class CopperTodoListElement extends _CopperElement_eygjgs206 {
+  static css = "\n\ttodo-list {\n\t\tdisplay: block;\n\t\tpadding: 10px;\n\t\tborder: 1px solid #ccc;\n\t\tborder-radius: 5px;\n\t}\n";
   constructor() {
     super();
-    const {
-      number,
-      string,
-      array,
-      object,
-      safeParse
-    } = _4tuslc0gs;
     this._copper.propsValidators = {
       todo: value => safeParse(array(object({
         id: number(),
@@ -23,14 +11,8 @@ export default class CopperTodoListElement extends _CopperElement_kq3y5fkma {
     };
   }
   init() {
-    const {
-      number,
-      string,
-      array,
-      object,
-      safeParse
-    } = _4tuslc0gs;
     const todo = this._copper.props.todo;
+    const todo_count = _computed_b27hc5olo(() => todo.value.length);
     const remove = function remove(index) {
       this.emit('remove', index);
     }.bind(this);
@@ -41,7 +23,8 @@ export default class CopperTodoListElement extends _CopperElement_kq3y5fkma {
       object,
       safeParse,
       remove,
-      todo
+      todo,
+      todo_count
     });
   }
   render({
@@ -51,9 +34,10 @@ export default class CopperTodoListElement extends _CopperElement_kq3y5fkma {
     object,
     safeParse,
     remove,
-    todo
+    todo,
+    todo_count
   }) {
-    super.render(_text_4pty1u2mj(), _reactiveFor_680kwy19b(() => todo.value, (task, index) => task.id, (task, index) => [_text_4pty1u2mj(), _append_4qadjd0up(_el_6k35yt4im("div"), _text_4pty1u2mj(" Task #"), _text_4pty1u2mj(() => index.value + 1), _text_4pty1u2mj(": "), _text_4pty1u2mj(() => task.value.title), _text_4pty1u2mj(), _listen_n39u0aj8m(_attr_6jvt9whqg(_el_6k35yt4im("input"), "type", "button", "value", "Remove"), "click", $event => remove(index.value), []), _text_4pty1u2mj()), _text_4pty1u2mj()]), _text_4pty1u2mj());
+    super.render(_text_6546w19qu(), _reactiveFor_ztaqf9a4u(() => todo.value, (task, index) => task.id, (task, index) => [_text_6546w19qu(), _append_t526e9bi4(_el_eqz3mcbdw("div"), _text_6546w19qu(" Task #"), _text_6546w19qu(() => index + 1), _text_6546w19qu(" / "), _text_6546w19qu(() => todo_count.value), _text_6546w19qu(": "), _text_6546w19qu(() => task.title), _text_6546w19qu(), _listen_vrgpxs2cn(_attr_gpqot6kbp(_el_eqz3mcbdw("input"), "type", "button", "value", "Remove"), "click", $event => remove(index), []), _text_6546w19qu()), _text_6546w19qu()]), _text_6546w19qu());
   }
 }
 window.customElements.define("todo-list", CopperTodoListElement);

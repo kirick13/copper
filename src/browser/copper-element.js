@@ -1,11 +1,32 @@
 
 import { CopperState } from './copper-state.js';
 
+function attachCss(name, css) {
+	const style = document.createElement('style');
+	style.setAttribute(
+		'copper-component',
+		name,
+	);
+	style.textContent = css;
+	document.head.append(style);
+}
+
 export class CopperElement extends HTMLElement {
 	root;
 
 	constructor(options = {}) {
 		super();
+
+		if (typeof this.constructor.css === 'string') {
+			attachCss(
+				this.tagName.toLowerCase(),
+				this.constructor.css,
+			);
+
+			delete this.constructor.css;
+		}
+
+		this.innerHTML = '';
 
 		const option_shadow = options.shadow ?? 'none';
 		switch (option_shadow) {

@@ -5,11 +5,13 @@ import * as t   from '@babel/types';
 export const REF = Symbol('REF');
 export const REF_PROBABLY = Symbol('REF_PROBABLY');
 
-export function magicUnref(ast, refs) {
+export function magicUnref(ast, flow) {
 	const result = {
 		ast,
 		refs_called: new Set(),
 	};
+
+	const { refs } = flow.script;
 
 	traverse(
 		{
@@ -46,7 +48,9 @@ export function magicUnref(ast, refs) {
 						} break;
 						case REF_PROBABLY: {
 							const node_new = t.callExpression(
-								t.identifier('unref'),
+								t.identifier(
+									flow._getCopperImportVariable('unref'),
+								),
 								[
 									t.identifier(variable),
 								],

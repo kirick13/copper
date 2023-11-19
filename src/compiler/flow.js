@@ -7,13 +7,12 @@ import { getAstClass }               from './flow/ast/class.js';
 import { getAstDefineCustomElement } from './flow/ast/define-custom-element.js';
 import { getAstCopperImports }       from './flow/ast/copper-imports.js';
 import { getAstStateProperties }     from './flow/ast/state-properties.js';
-import { getAstStyle }               from './flow/ast/style.js';
 import flowBuildImports			     from './flow/methods/build-imports.js';
 import flowConstructor               from './flow/methods/constructor.js';
 import flowProcessImport 		     from './flow/methods/process-import.js';
 import flowProcessScript             from './flow/methods/process-script.js';
-import { createVariableName } from './utils.js';
-import { magicUnref } from './magic-unref.js';
+import { createVariableName }        from './utils.js';
+import { magicUnref }                from './magic-unref.js';
 
 function componentNameToClassName(component_name) {
 	if (component_name.startsWith('cu-')) {
@@ -101,15 +100,16 @@ export class CompilerFlow {
 
 		const asts_imports = this._buildImports();
 
-		const ast_style = getAstStyle(
-			this,
-			this.style.source,
-		);
+		// const ast_css = getAstStyle(
+		// 	this,
+		// 	this.style.source,
+		// );
 
 		const ast_class = getAstClass.call(
 			this,
 			{
 				class_name,
+				css: this.style.source,
 				// variables in the form of ObjectPattern
 				ast_state_properties: getAstStateProperties(
 					this.script.variables,
@@ -134,7 +134,7 @@ export class CompilerFlow {
 							this.templateCompiler.asts,
 						),
 					),
-					this.script.refs,
+					this,
 				).ast,
 			},
 		);
@@ -146,8 +146,6 @@ export class CompilerFlow {
 			),
 			// add script imports
 			...asts_imports,
-			// add style
-			ast_style,
 			// main class
 			ast_class,
 			// define ustom element

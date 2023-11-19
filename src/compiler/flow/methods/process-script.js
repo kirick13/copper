@@ -48,7 +48,7 @@ export default function () {
 			case 'FunctionDeclaration':
 				magicUnref(
 					node,
-					this.script.refs,
+					this,
 				);
 
 				this.script.ast_result.push(
@@ -171,7 +171,7 @@ function processVariableDeclarator(_this, kind, node) {
 
 		const magic_unref_result = magicUnref(
 			node.init,
-			_this.script.refs,
+			_this,
 		);
 
 		_this.script.variables.add(name);

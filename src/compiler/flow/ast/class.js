@@ -3,12 +3,26 @@ import * as t from '@babel/types';
 
 export function getAstClass({
 	class_name,
+	css,
 	ast_state_properties,
 	asts_constructor,
 	asts_script,
 	ast_render,
 }) {
 	const ast_class_body = [];
+
+	if (typeof css === 'string' && css.length > 0) {
+		ast_class_body.push(
+			t.classProperty(
+				t.identifier('css'),
+				t.stringLiteral(css),
+				null,
+				null,
+				false,
+				true,
+			),
+		);
+	}
 
 	if (asts_constructor !== null) {
 		ast_class_body.push(

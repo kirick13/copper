@@ -1,21 +1,19 @@
 
+import * as t                 from '@babel/types';
+import { createVariableName } from '../../utils.js';
+
 function processNamedImports(named) {
 	const properties = [];
 	for (const [ variable_exported, variables_inner ] of named.entries()) {
 		for (const variable_inner of variables_inner) {
-			properties.push({
-				type: 'ObjectProperty',
-				kind: 'init',
-				shorthand: variable_exported === variable_inner,
-				key: {
-					type: 'Identifier',
-					name: variable_exported,
-				},
-				value: {
-					type: 'Identifier',
-					name: variable_inner,
-				},
-			});
+			properties.push(
+				t.objectProperty(
+					t.identifier(variable_exported),
+					t.identifier(variable_inner),
+					false,
+					variable_exported === variable_inner,
+				),
+			);
 		}
 	}
 
@@ -29,7 +27,6 @@ export default function flowBuildImports() {
 		const [
 			source,
 			{
-				default: default_import,
 				namespace,
 				named,
 			},
@@ -38,66 +35,54 @@ export default function flowBuildImports() {
 		const ast_import_specifiers = [];
 		const ast_variable_declarations = [];
 
-		if (default_import !== null) {
-			ast_import_specifiers.push({
-				type: 'ImportDefaultSpecifier',
-				local: {
-					type: 'Identifier',
-					name: default_import.variable_outer,
-				},
-			});
+		if (namespace === null) {
+			for (const [ variable_exported, variables_inner ] of named.entries()) {
+				const variable_imported = createVariableName();
 
-			ast_variable_declarations.push({
-				type: 'VariableDeclarator',
-				id: {
-					type: 'Identifier',
-					name: default_import.variable_inner,
-				},
-				init: {
-					type: 'Identifier',
-					name: default_import.variable_outer,
-				},
-			});
-		}
+				ast_import_specifiers.push(
+					t.importSpecifier(
+						t.identifier(variable_imported),
+						t.identifier(variable_exported),
+					),
+				);
 
-		if (namespace !== null) {
-			ast_import_specifiers.push({
-				type: 'ImportNamespaceSpecifier',
-				local: {
-					type: 'Identifier',
-					name: namespace.variable_outer,
-				},
-			});
-
-			if (namespace.variable_inner !== null) {
-				ast_variable_declarations.push({
-					type: 'VariableDeclarator',
-					id: {
-						type: 'Identifier',
-						name: namespace.variable_inner,
-					},
-					init: {
-						type: 'Identifier',
-						name: namespace.variable_outer,
-					},
-				});
+				for (const variable_inner of variables_inner) {
+					ast_variable_declarations.push(
+						t.variableDeclarator(
+							t.identifier(variable_inner),
+							t.identifier(variable_imported),
+						),
+					);
+				}
 			}
+		}
+		else {
+			const namespace_imported_variable = createVariableName();
+
+			ast_import_specifiers.push(
+				t.importNamespaceSpecifier(
+					t.identifier(
+						namespace_imported_variable,
+					),
+				),
+			);
+
+			ast_variable_declarations.push(
+				t.variableDeclarator(
+					t.identifier(namespace),
+					t.identifier(namespace_imported_variable),
+				),
+			);
 
 			{
 				const properties = processNamedImports(named);
-
 				if (properties.length > 0) {
-					ast_variable_declarations.push({
-						type: 'VariableDeclarator',
-						id: {
-							type: 'ObjectPattern',
-							properties,
-						},
-						init: {
-							type: 'Identifier',
-							name: namespace.variable_outer,
-						},
-					});
+					ast_variable_declarations.push(
+						t.variableDeclarator(
+							t.objectPattern(properties),
+							t.identifier(namespace_imported_variable),
+						),
+					);
 				}
 			}
 		}

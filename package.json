@@ -1,9 +1,18 @@
 {
-	"name": "copper",
-	"version": "0.0.1",
-	"description": "",
+	"name": "@kirick/copper",
+	"publishConfig": {
+		"access": "public"
+	},
+	"version": "0.1.2",
+	"description": "Lightweight reactive UI library for building web interfaces with Web Components",
 	"main": "src/main.js",
 	"type": "module",
+	"unpkg": "dist/copper.esm.js",
+	"jsdelivr": "dist/copper.esm.js",
+	"exports": {
+		".": "./src/main.js",
+		"./compiler": "./src/compiler.js"
+	},
 	"dependencies": {
 		"@babel/generator": "^7.23.3",
 		"@babel/parser": "^7.23.3",
