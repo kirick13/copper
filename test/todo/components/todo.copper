@@ -1,0 +1,58 @@
+
+<cu-todo>
+	<todo-title :count="todo.length"></todo-title>
+	<div>
+		counter: {{ counter }}
+		<input type="button" value="Increment" @click="counter++">
+	</div>
+	<div>
+		<input
+			type="text"
+			:value.sync="new_todo_title"
+			>
+		<input
+			type="button"
+			value="Add"
+			@click="addTodo()"
+			>
+	</div>
+	<cu if="todo.length > 0">
+		<todo-list
+			:todo="todo"
+			@remove="todo.splice($event, 1)"
+			>
+		</todo-list>
+	</cu>
+	<cu else>
+		<i>No tasks to do.</i>
+	</cu>
+</cu-todo>
+
+<script type="module">
+	// import * as valibot from 'valibot';
+	// import validot_def, { string, string as string2 } from 'valibot';
+	import TodoList from '/test/todo/dist/components/todo-list.js';
+	import TodoTitle from '/test/todo/dist/components/todo-title.js';
+
+	let counter = 0;
+	let new_todo_title = '';
+	let todo = [];
+
+	function addTodo(arg) {
+		todo.push({
+			id: Date.now(),
+			title: new_todo_title,
+		});
+
+		new_todo_title = '';
+	}
+</script>
+
+<style>
+	cu-todo {
+		display: block;
+		padding: 10px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+	}
+</style>

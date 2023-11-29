@@ -1,0 +1,50 @@
+
+<todo-list>
+	<cu
+		for="index, task of todo"
+		key="task.id"
+		>
+		<div>
+			Task #{{ index + 1 }} / {{ todo_count }}: {{ task.title }}
+			<input
+				type="button"
+				value="Remove"
+				@click="remove(index)"
+				>
+		</div>
+	</cu>
+</todo-list>
+
+<script type="module">
+	import { number, string, array, object, safeParse } from 'valibot';
+
+	const { todo } = defineProps({
+		todo: (value) => safeParse(
+			array(
+				object({
+					id: number(),
+					title: string(),
+				}),
+			),
+			value,
+		).success,
+	});
+
+	const todo_count = todo.length;
+
+	function remove(index) {
+		this.emit(
+			'remove',
+			index,
+		);
+	}
+</script>
+
+<style>
+	todo-list {
+		display: block;
+		padding: 10px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+	}
+</style>

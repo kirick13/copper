@@ -1,0 +1,35 @@
+
+<html>
+	<head>
+		<script type="importmap">
+			{
+				"imports": {
+					"copper": "/dist/copper.esm.js"
+				}
+			}
+		</script>
+		<script type="module" src="/test/@rich_harris/dist/rich-harris.js"></script>
+		<style>
+			rich-harris {
+				display: block;
+				margin-top: 1em;
+				border: 1px solid #ccc;
+				border-radius: 5px;
+				max-width: fit-content;
+				user-select: none;
+			}
+			rich-harris div {
+				padding: .7em;
+				width: 50px;
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Copper solved Rich Harris' proposal</h1>
+		<p>Copper was built with <a href="https://twitter.com/Rich_Harris/status/1057290365395451905" target="_blank">that thinking:</a></p>
+		<img src="https://pbs.twimg.com/media/Dqw_-m0V4AAZYxK?format=jpg">
+		<p>Finally, you can get rid of <code>.value</code>. Click on block below:</a></p>
+		<rich-harris></rich-harris>
+	</body>
+</html>
