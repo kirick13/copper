@@ -48,7 +48,12 @@ export class CopperElement extends HTMLElement {
 
 	#is_ready = false;
 	init(state) {
-		this.render(state);
+		try {
+			this.render(state);
+		}
+		catch (error) {
+			console.error(error);
+		}
 	}
 
 	render(...elements) {

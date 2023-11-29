@@ -5,13 +5,14 @@ import * as t   from '@babel/types';
 export const REF = Symbol('REF');
 export const REF_PROBABLY = Symbol('REF_PROBABLY');
 
-export function magicUnref(ast, flow) {
+export function magicUnref(ast, flow, refs) {
 	const result = {
 		ast,
 		refs_called: new Set(),
 	};
 
-	const { refs } = flow.script;
+	// const { refs } = flow.script;
+	refs ??= flow.script.refs;
 
 	traverse(
 		{
@@ -66,21 +67,26 @@ export function magicUnref(ast, flow) {
 			},
 			AssignmentExpression(path) {
 				const node_left = path.node.left;
-				if (node_left.type !== 'Identifier') {
-					throw new Error('Assignment to anything other than Identifier is not supported yet.');
-				}
+				switch (node_left.type) {
+					case 'Identifier': {
+						const variable = node_left.name;
+						if (path.scope.hasBinding(variable) === false) {
+							switch (refs.get(variable)) {
+								case REF:
+									path.node.left = t.memberExpression(
+										t.identifier(variable),
+										t.identifier('value'),
+									);
 
-				const variable = node_left.name;
-				if (
-					path.scope.hasBinding(variable) === false
-					&& refs.has(variable)
-				) {
-					path.node.left = t.memberExpression(
-						t.identifier(variable),
-						t.identifier('value'),
-					);
-
-					path.node.left.__copper_skip = true;
+									path.node.left.__copper_skip = true;
+									break;
+								case REF_PROBABLY:
+									throw new Error('Cannot assign to imported property.');
+								// no default
+							}
+						}
+					} break;
+					// no default
 				}
 			},
 			// UpdateExpression(path) {

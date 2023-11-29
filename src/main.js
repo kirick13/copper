@@ -1,5 +1,5 @@
 
-export { el, text, fragment } from './browser/element.js';
+export { el, svg, text, fragment } from './browser/element.js';
 export { append } from './browser/append.js';
 export { attr } from './browser/attributes.js';
 export { reactiveIf } from './browser/reactive/if.js';

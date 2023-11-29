@@ -6,7 +6,7 @@ import { REF, magicUnref } from '../magic-unref.js';
 
 const regexp_values = /^\s*(?:([$A-Z_a-z][\w$]+)\s*,\s*)?([$A-Z_a-z][\w$]+)\s+of\s+/;
 
-export function templateCompilerFor(flow, element, attributes) {
+export function templateCompilerFor(flow, element, attributes, context) {
 	const refs = new Map(flow.script.refs);
 
 	const attribute_for = attributes.get('for');
@@ -41,7 +41,7 @@ export function templateCompilerFor(flow, element, attributes) {
 		);
 	}
 
-	const templateCompiler = new TemplateCompiler(flow, element);
+	const templateCompiler = new TemplateCompiler(flow, element, context);
 
 	return t.callExpression(
 		t.identifier(
@@ -59,6 +59,7 @@ export function templateCompilerFor(flow, element, attributes) {
 					magicUnref(
 						templateCompiler.asts,
 						flow,
+						refs,
 					).ast,
 				),
 			),

@@ -1,14 +1,14 @@
-import { ref as _ref_5j0lb4idb, text as _text_9pj9o6uas, el as _el_f5c2aacv9, reactiveProp as _reactiveProp_xygr612su, attr as _attr_a9ufimelv, listen as _listen_2i6ip7f8n, append as _append_uuz93uwpt, reactiveInputValue as _reactiveInputValue_ulyv5hho8, reactiveIf as _reactiveIf_evlkr3b4l, CopperElement as _CopperElement_qypeeo4h4 } from "@kirick/copper";
-import { default as _daejqotmo, string as _p646dnv2u } from "valibot";
-export default class CopperTodoElement extends _CopperElement_qypeeo4h4 {
+import { ref as _ref_y6jko18o4, text as _text_8l22kbvm1, el as _el_1winatx87, reactiveProp as _reactiveProp_uggypi9i9, attr as _attr_k8kdvi2q8, listen as _listen_shth7t2xj, append as _append_vjnsey8sa, reactiveInputValue as _reactiveInputValue_ch8myf059, reactiveIf as _reactiveIf_eokp86isv, CopperElement as _CopperElement_ibndx5vy2 } from "@kirick/copper";
+import { default as _qk838vp7z } from "/test/todo/dist/components/todo-list.js";
+import { default as _czrx4lyz4 } from "/test/todo/dist/components/todo-title.js";
+export default class CopperTodoElement extends _CopperElement_ibndx5vy2 {
   static css = "\n\tcu-todo {\n\t\tdisplay: block;\n\t\tpadding: 10px;\n\t\tborder: 1px solid #ccc;\n\t\tborder-radius: 5px;\n\t}\n";
   init() {
-    const validot_def = _daejqotmo,
-      string = _p646dnv2u,
-      string2 = _p646dnv2u;
-    const counter = _ref_5j0lb4idb(0);
-    const new_todo_title = _ref_5j0lb4idb('');
-    const todo = _ref_5j0lb4idb([]);
+    const TodoList = _qk838vp7z;
+    const TodoTitle = _czrx4lyz4;
+    const counter = _ref_y6jko18o4(0);
+    const new_todo_title = _ref_y6jko18o4('');
+    const todo = _ref_y6jko18o4([]);
     const addTodo = function addTodo(arg) {
       todo.value.push({
         id: Date.now(),
@@ -17,9 +17,8 @@ export default class CopperTodoElement extends _CopperElement_qypeeo4h4 {
       new_todo_title.value = '';
     }.bind(this);
     super.init({
-      validot_def,
-      string,
-      string2,
+      TodoList,
+      TodoTitle,
       addTodo,
       counter,
       new_todo_title,
@@ -27,15 +26,14 @@ export default class CopperTodoElement extends _CopperElement_qypeeo4h4 {
     });
   }
   render({
-    validot_def,
-    string,
-    string2,
+    TodoList,
+    TodoTitle,
     addTodo,
     counter,
     new_todo_title,
     todo
   }) {
-    super.render(_text_9pj9o6uas(), _reactiveProp_xygr612su(_el_f5c2aacv9("todo-title"), "count", () => todo.value.length), _text_9pj9o6uas(), _append_uuz93uwpt(_el_f5c2aacv9("div"), _text_9pj9o6uas(" counter: "), _text_9pj9o6uas(() => counter.value), _text_9pj9o6uas(), _listen_2i6ip7f8n(_attr_a9ufimelv(_el_f5c2aacv9("input"), "type", "button", "value", "Increment"), "click", $event => counter.value++, []), _text_9pj9o6uas()), _text_9pj9o6uas(), _append_uuz93uwpt(_el_f5c2aacv9("div"), _text_9pj9o6uas(), _reactiveInputValue_ulyv5hho8(_attr_a9ufimelv(_el_f5c2aacv9("input"), "type", "text"), () => new_todo_title.value, value => new_todo_title.value = value), _text_9pj9o6uas(), _listen_2i6ip7f8n(_attr_a9ufimelv(_el_f5c2aacv9("input"), "type", "button", "value", "Add"), "click", $event => addTodo(), []), _text_9pj9o6uas()), _text_9pj9o6uas(), _text_9pj9o6uas(), _reactiveIf_evlkr3b4l(() => todo.value.length > 0 ? 0 : 1, [() => [_text_9pj9o6uas(), _append_uuz93uwpt(_listen_2i6ip7f8n(_reactiveProp_xygr612su(_el_f5c2aacv9("todo-list"), "todo", () => todo.value), "copper:remove", $event => todo.value.splice($event, 1), [".component"]), _text_9pj9o6uas()), _text_9pj9o6uas()], () => [_text_9pj9o6uas(), _append_uuz93uwpt(_el_f5c2aacv9("i"), _text_9pj9o6uas("No tasks to do.")), _text_9pj9o6uas()]]), _text_9pj9o6uas());
+    super.render(_text_8l22kbvm1(), _reactiveProp_uggypi9i9(_el_1winatx87("todo-title"), "count", () => todo.value.length), _text_8l22kbvm1(), _append_vjnsey8sa(_el_1winatx87("div"), _text_8l22kbvm1(" counter: "), _text_8l22kbvm1(() => counter.value), _text_8l22kbvm1(), _listen_shth7t2xj(_attr_k8kdvi2q8(_el_1winatx87("input"), "type", "button", "value", "Increment"), "click", $event => counter.value++, []), _text_8l22kbvm1()), _text_8l22kbvm1(), _append_vjnsey8sa(_el_1winatx87("div"), _text_8l22kbvm1(), _reactiveInputValue_ch8myf059(_attr_k8kdvi2q8(_el_1winatx87("input"), "type", "text"), () => new_todo_title.value, value => new_todo_title.value = value), _text_8l22kbvm1(), _listen_shth7t2xj(_attr_k8kdvi2q8(_el_1winatx87("input"), "type", "button", "value", "Add"), "click", $event => addTodo(), []), _text_8l22kbvm1()), _text_8l22kbvm1(), _text_8l22kbvm1(), _reactiveIf_eokp86isv(() => todo.value.length > 0 ? 0 : 1, [() => [_text_8l22kbvm1(), _append_vjnsey8sa(_listen_shth7t2xj(_reactiveProp_uggypi9i9(_el_1winatx87("todo-list"), "todo", () => todo.value), "copper:remove", $event => todo.value.splice($event, 1), [".component"]), _text_8l22kbvm1()), _text_8l22kbvm1()], () => [_text_8l22kbvm1(), _append_vjnsey8sa(_el_1winatx87("i"), _text_8l22kbvm1("No tasks to do.")), _text_8l22kbvm1()]]), _text_8l22kbvm1());
   }
 }
 window.customElements.define("cu-todo", CopperTodoElement);

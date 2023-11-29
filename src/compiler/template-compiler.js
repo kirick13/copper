@@ -21,18 +21,22 @@ export class TemplateCompiler {
 	flow;
 	asts = [];
 
-	constructor(flow, node) {
+	constructor(flow, node, context) {
 		this.flow = flow;
 
 		this.asts.push(
-			...this.#convertChilds(node),
+			...this.#convertChilds(
+				node,
+				context,
+			),
 		);
 	}
 
-	#convertChilds(node) {
+	#convertChilds(node, upper_context = {}) {
 		const asts = [];
 
 		const context = {
+			namespace: upper_context.namespace ?? null,
 			if: null,
 			flushIf() {
 				if (this.if) {
@@ -76,6 +80,7 @@ export class TemplateCompiler {
 					this.flow,
 					attributes.get('if'),
 					element,
+					context,
 				);
 			}
 			else if (attributes.has('else-if')) {
@@ -97,6 +102,7 @@ export class TemplateCompiler {
 						this.flow,
 						element,
 						attributes,
+						context,
 					),
 				);
 			}
@@ -136,7 +142,11 @@ export class TemplateCompiler {
 		else {
 			context.flushIf();
 
-			const is_component = element.tagName.includes('-');
+			const tag_name = element.tagName.toLowerCase();
+			const is_component = tag_name.includes('-');
+			if (element.tagName === 'svg') {
+				context.namespace ??= 'svg';
+			}
 
 			const calls = {
 				attribute: [],
@@ -162,7 +172,11 @@ export class TemplateCompiler {
 				calls[result.target].push(...result.args);
 			}
 
-			let ast_element = getAstCreateElement.call(this, element.tagName);
+			let ast_element = getAstCreateElement.call(
+				this,
+				tag_name,
+				context.namespace,
+			);
 
 			if (calls.attribute.length + calls.attribute_reactive.length > 0) {
 				ast_element = getAstSetAttributes.call(
@@ -198,7 +212,7 @@ export class TemplateCompiler {
 			}
 
 			// this.#convertChilds(element, variable);
-			const asts_children = this.#convertChilds(element);
+			const asts_children = this.#convertChilds(element, context);
 			if (asts_children.length > 0) {
 				ast_element = getAstAppend.call(
 					this,

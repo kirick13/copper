@@ -15,6 +15,13 @@ export function el(tag) {
 	return element;
 }
 
+export function svg(tag = 'svg') {
+	const element = document.createElementNS('http://www.w3.org/2000/svg', tag);
+	attachCopper(element);
+
+	return element;
+}
+
 export function text(arg0) {
 	const is_getter = typeof arg0 === 'function';
 

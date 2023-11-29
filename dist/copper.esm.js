@@ -2257,6 +2257,11 @@ function el(tag) {
   attachCopper(element);
   return element;
 }
+function svg(tag = "svg") {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  attachCopper(element);
+  return element;
+}
 function text(arg0) {
   const is_getter = typeof arg0 === "function";
   const element = document.createTextNode(is_getter ? "" : arg0 ?? " ");
@@ -2642,7 +2647,11 @@ class CopperElement extends HTMLElement {
   }
   #is_ready = false;
   init(state) {
-    this.render(state);
+    try {
+      this.render(state);
+    } catch (error) {
+      console.error(error);
+    }
   }
   render(...elements) {
     this.root.append(...elements);
@@ -2666,7 +2675,9 @@ export {
   watch,
   unref,
   text,
+  svg,
   ref,
+  readonly,
   reactiveProp,
   reactiveInputValue,
   reactiveIf,

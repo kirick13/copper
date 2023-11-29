@@ -33,13 +33,15 @@ function replaceObjectEntries(target, source) {
 
 export class TemplateCompilerIf {
 	flow;
+	context;
 
 	ast_watch;
 	#ast_last_alternate;
 	asts_outcomes = [];
 
-	constructor(flow, rawjs_test, element) {
+	constructor(flow, rawjs_test, element, context) {
 		this.flow = flow;
+		this.context = context;
 
 		this.#ast_last_alternate = getAstAlternate();
 
@@ -56,6 +58,7 @@ export class TemplateCompilerIf {
 		const templateCompiler = new TemplateCompiler(
 			this.flow,
 			element,
+			this.context,
 		);
 
 		this.asts_outcomes.push(
