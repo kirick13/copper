@@ -1,6 +1,5 @@
 
-import { REF_PROBABLY }       from '../../magic-unref.js';
-import { createVariableName } from '../../utils.js';
+import { REF_PROBABLY } from '../../magic-unref.js';
 
 function addNamedImport(import_data_named, name, variable_imported) {
 	if (import_data_named.has(name) !== true) {

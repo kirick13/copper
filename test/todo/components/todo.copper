@@ -8,6 +8,7 @@
 	<div>
 		<input
 			type="text"
+			:class="{ 'test-value': counter > 1 }"
 			:value.sync="new_todo_title"
 			>
 		<input

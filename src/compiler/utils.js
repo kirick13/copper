@@ -86,10 +86,15 @@ export function parseMustache(value) {
 }
 
 export function parseRawJsExpression(rawjs_code) {
-	return parseJs(
-		rawjs_code,
-		{
-			ecmaVersion: 'latest',
-		},
-	).program.body[0].expression;
+	try {
+		return parseJs(
+			'_=' + rawjs_code,
+			{
+				ecmaVersion: 'latest',
+			},
+		).program.body[0].expression.right;
+	}
+	catch {
+		throw new Error(`Invalid expression: "${rawjs_code}".`);
+	}
 }
