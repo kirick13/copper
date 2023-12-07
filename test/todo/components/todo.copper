@@ -9,6 +9,7 @@
 		<input
 			type="text"
 			:class="{ 'test-value': counter > 1 }"
+			:style="{ 'color': new_todo_title.length >= 10 ? 'red' : null }"
 			:value.sync="new_todo_title"
 			>
 		<input
@@ -20,6 +21,7 @@
 	<cu if="todo.length > 0">
 		<todo-list
 			:todo="todo"
+			:test_value="{ is_counter: counter > 1 }"
 			@remove="todo.splice($event, 1)"
 			>
 		</todo-list>

@@ -2325,24 +2325,20 @@ function isPlainObject2(value) {
 }
 
 // src/browser/attributes.js
-var convertClasses = function(value) {
-  const classes = new Set;
-  if (typeof value === "string") {
-    for (const class_name of value.split(" ")) {
-      classes.add(class_name);
-    }
-  } else if (isPlainObject2(value)) {
-    for (const [key, is_active] of Object.entries(value)) {
-      if (is_active) {
-        classes.add(key);
+var convertStructure = function(value) {
+  const result = new Map;
+  if (isPlainObject2(value)) {
+    for (const [entry_key, entry_value] of Object.entries(value)) {
+      if (entry_value) {
+        result.set(entry_key, entry_value);
       }
     }
   } else if (Array.isArray(value)) {
     for (const item of value) {
-      classes.add(item);
+      result.set(item, item);
     }
   }
-  return classes;
+  return result;
 };
 var setAttr = function(element, key, value, value_old) {
   if (BOOLEAN_ATTRIBUTES.has(key)) {
@@ -2351,14 +2347,25 @@ var setAttr = function(element, key, value, value_old) {
     } else {
       element.removeAttribute(key);
     }
+  } else if (typeof value === "string") {
+    element.setAttribute(key, value);
   } else if (key === "class") {
-    const class_names_before = convertClasses(value_old);
-    for (const class_name of convertClasses(value)) {
+    const class_names_before = convertStructure(value_old);
+    for (const class_name of convertStructure(value).keys()) {
       element.classList.add(class_name);
       class_names_before.delete(class_name);
     }
-    for (const class_name of class_names_before) {
-      element.classList.remove(class_name);
+    for (const class_name of class_names_before.keys()) {
+      element.classList.delete(class_name);
+    }
+  } else if (key === "style") {
+    const styles_before = convertStructure(value_old);
+    for (const [property, property_value] of convertStructure(value)) {
+      element.style[property] = property_value;
+      styles_before.delete(property);
+    }
+    for (const property of styles_before.keys()) {
+      element.style[property] = null;
     }
   } else if (value !== null && value !== undefined) {
     element.setAttribute(key, value);
@@ -2372,7 +2379,7 @@ function attr(element, ...args) {
     const arg0 = args[index + 1];
     if (typeof arg0 === "function") {
       element._copper.watch(arg0, (value, value_old) => {
-        attr(element, key, unref(value), unref(value_old));
+        setAttr(element, key, unref(value), unref(value_old));
       }, {
         deep: true,
         immediate: true

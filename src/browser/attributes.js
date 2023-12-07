@@ -3,28 +3,29 @@ import { unref }              from 'vue';
 import { BOOLEAN_ATTRIBUTES } from '../data/boolean-attributes.js';
 import { isPlainObject } 	  from '../utils.js';
 
-function convertClasses(value) {
-	const classes = new Set();
+function convertStructure(value) {
+	const result = new Map();
 
-	if (typeof value === 'string') {
-		for (const class_name of value.split(' ')) {
-			classes.add(class_name);
-		}
-	}
-	else if (isPlainObject(value)) {
-		for (const [ key, is_active ] of Object.entries(value)) {
-			if (is_active) {
-				classes.add(key);
+	if (isPlainObject(value)) {
+		for (const [ entry_key, entry_value ] of Object.entries(value)) {
+			if (entry_value) {
+				result.set(
+					entry_key,
+					entry_value,
+				);
 			}
 		}
 	}
 	else if (Array.isArray(value)) {
 		for (const item of value) {
-			classes.add(item);
+			result.set(
+				item,
+				item,
+			);
 		}
 	}
 
-	return classes;
+	return result;
 }
 
 // eslint-disable-next-line unicorn/prevent-abbreviations
@@ -37,16 +38,31 @@ function setAttr(element, key, value, value_old) {
 			element.removeAttribute(key);
 		}
 	}
+	else if (typeof value === 'string') {
+		element.setAttribute(key, value);
+	}
 	else if (key === 'class') {
-		const class_names_before = convertClasses(value_old);
+		const class_names_before = convertStructure(value_old);
 
-		for (const class_name of convertClasses(value)) {
+		for (const class_name of convertStructure(value).keys()) {
 			element.classList.add(class_name);
 			class_names_before.delete(class_name);
 		}
 
-		for (const class_name of class_names_before) {
-			element.classList.remove(class_name);
+		for (const class_name of class_names_before.keys()) {
+			element.classList.delete(class_name);
+		}
+	}
+	else if (key === 'style') {
+		const styles_before = convertStructure(value_old);
+
+		for (const [ property, property_value ] of convertStructure(value)) {
+			element.style[property] = property_value;
+			styles_before.delete(property);
+		}
+
+		for (const property of styles_before.keys()) {
+			element.style[property] = null;
 		}
 	}
 	else if (
@@ -74,7 +90,7 @@ export function attr(element, ...args) {
 			element._copper.watch(
 				arg0,
 				(value, value_old) => {
-					attr(
+					setAttr(
 						element,
 						key,
 						unref(value),
