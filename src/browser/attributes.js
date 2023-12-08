@@ -57,12 +57,12 @@ function setAttr(element, key, value, value_old) {
 		const styles_before = convertStructure(value_old);
 
 		for (const [ property, property_value ] of convertStructure(value)) {
-			element.style[property] = property_value;
+			element.style.setProperty(property, property_value);
 			styles_before.delete(property);
 		}
 
 		for (const property of styles_before.keys()) {
-			element.style[property] = null;
+			element.style.removeProperty(property);
 		}
 	}
 	else if (
