@@ -2356,7 +2356,7 @@ var setAttr = function(element, key, value, value_old) {
       class_names_before.delete(class_name);
     }
     for (const class_name of class_names_before.keys()) {
-      element.classList.delete(class_name);
+      element.classList.remove(class_name);
     }
   } else if (key === "style") {
     const styles_before = convertStructure(value_old);

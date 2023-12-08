@@ -50,7 +50,7 @@ function setAttr(element, key, value, value_old) {
 		}
 
 		for (const class_name of class_names_before.keys()) {
-			element.classList.delete(class_name);
+			element.classList.remove(class_name);
 		}
 	}
 	else if (key === 'style') {
