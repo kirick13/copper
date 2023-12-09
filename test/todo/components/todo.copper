@@ -49,6 +49,24 @@
 
 		new_todo_title = '';
 	}
+
+	watch(
+		() => todo.length,
+		(value) => {
+			console.log('todo.length', value);
+		},
+		{
+			immediate: true,
+		},
+	);
+
+	onMounted(() => {
+		console.log('cu-todo mounted!');
+	});
+
+	onUnmounted(() => {
+		console.log('cu-todo unmounted :(');
+	});
 </script>
 
 <style>

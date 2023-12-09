@@ -2238,11 +2238,13 @@ class CopperState {
     while (this.#watchers.length > 0) {
       this.#watchers.pop()();
     }
-    for (const child of this.element.childNodes) {
-      child._copper?.destroy();
+    if (this.element) {
+      for (const child of this.element.childNodes) {
+        child._copper?.destroy();
+      }
+      delete this.element._copper;
+      this.element = null;
     }
-    delete this.element._copper;
-    this.element = null;
   }
 }
 
@@ -2361,11 +2363,11 @@ var setAttr = function(element, key, value, value_old) {
   } else if (key === "style") {
     const styles_before = convertStructure(value_old);
     for (const [property, property_value] of convertStructure(value)) {
-      element.style[property] = property_value;
+      element.style.setProperty(property, property_value);
       styles_before.delete(property);
     }
     for (const property of styles_before.keys()) {
-      element.style[property] = null;
+      element.style.removeProperty(property);
     }
   } else if (value !== null && value !== undefined) {
     element.setAttribute(key, value);
@@ -2557,16 +2559,14 @@ function reactiveProp(element3, ...args) {
     const prop = ref();
     const validator = copperState.propsValidators?.[key];
     const is_validator_function = typeof validator === "function";
-    setTimeout(() => {
-      copperState.watch(watcher, (value) => {
-        if (is_validator_function && validator(value) !== true) {
-          console.error(`Invalid value for property ${key} on component`, element3);
-        } else {
-          prop.value = value;
-        }
-      }, {
-        immediate: true
-      });
+    copperState.watch(watcher, (value) => {
+      if (is_validator_function && validator(value) !== true) {
+        console.error(`Invalid value for property ${key} on component`, element3);
+      } else {
+        prop.value = value;
+      }
+    }, {
+      immediate: true
     });
     copperState.props[key] = readonly(prop);
   }
@@ -2663,14 +2663,26 @@ class CopperElement extends HTMLElement {
   render(...elements) {
     this.root.append(...elements);
   }
+  #connected = false;
   connectedCallback() {
-    if (!this.#is_ready) {
-      this.#is_ready = true;
-      this.init();
+    if (this.#connected === false) {
+      this.#connected = true;
+      if (!this.#is_ready) {
+        this.#is_ready = true;
+        this.init();
+      }
+      this.emit("#mounted");
     }
-    this.onMount?.();
   }
   disconnectedCallback() {
+    setTimeout(() => {
+      if (this.isConnected === false) {
+        this.#connected = false;
+        this.onUnmount?.();
+        this.emit("#unmounted");
+        this._copper?.destroy();
+      }
+    });
   }
   emit(event_name, value) {
     this.dispatchEvent(new CustomEvent(`copper:${event_name}`, {

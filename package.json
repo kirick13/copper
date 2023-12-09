@@ -3,7 +3,7 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"version": "0.1.9-beta.2",
+	"version": "0.1.9-beta.7",
 	"description": "Lightweight reactive UI library for building web interfaces with Web Components",
 	"main": "src/main.js",
 	"type": "module",

@@ -62,18 +62,31 @@ export class CopperElement extends HTMLElement {
 		);
 	}
 
+	#connected = false;
 	connectedCallback() {
-		if (!this.#is_ready) {
-			this.#is_ready = true;
-			this.init();
-		}
+		if (this.#connected === false) {
+			this.#connected = true;
 
-		this.onMount?.();
+			if (!this.#is_ready) {
+				this.#is_ready = true;
+				this.init();
+			}
+
+			this.emit('#mounted');
+		}
 	}
 
 	disconnectedCallback() {
-		// console.log('Custom element removed from page.', this);
-		// this.onMount?.();
+		setTimeout(() => {
+			if (this.isConnected === false) {
+				this.#connected = false;
+				this.onUnmount?.();
+
+				this.emit('#unmounted');
+
+				this._copper?.destroy();
+			}
+		});
 	}
 
 	emit(event_name, value) {

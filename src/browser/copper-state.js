@@ -45,11 +45,13 @@ export class CopperState {
 			this.#watchers.pop()();
 		}
 
-		for (const child of this.element.childNodes) {
-			child._copper?.destroy();
-		}
+		if (this.element) {
+			for (const child of this.element.childNodes) {
+				child._copper?.destroy();
+			}
 
-		delete this.element._copper;
-		this.element = null;
+			delete this.element._copper;
+			this.element = null;
+		}
 	}
 }
