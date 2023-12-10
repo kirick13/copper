@@ -13,6 +13,7 @@ export function magicUnref(ast, flow, refs) {
 
 	// const { refs } = flow.script;
 	refs ??= flow.script.refs;
+	// console.log('refs', refs);
 
 	traverse(
 		{

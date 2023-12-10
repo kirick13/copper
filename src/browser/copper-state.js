@@ -6,7 +6,6 @@ import { watch } from 'vue';
 
 export class CopperState {
 	element;
-	props = {};
 	#watchers = [];
 
 	constructor(element) {

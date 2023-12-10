@@ -5,7 +5,6 @@ import {
 	magicUnref } from '../../magic-unref.js';
 
 export default function () {
-	const content_hoisted = [];
 	const content = [];
 
 	for (const node of this.script.ast_source) {
@@ -34,7 +33,7 @@ export default function () {
 				// add to refs instantly because of hoisting
 				this.script.variables.add(node.id.name);
 
-				content_hoisted.push({
+				content.push({
 					type: 'method',
 					node,
 				});
@@ -72,7 +71,8 @@ export default function () {
 		}
 	}
 
-	for (const { type, node, ...args } of [ ...content_hoisted, ...content ]) {
+	const ast_hoisted = [];
+	for (const { type, node, ...args } of content) {
 		switch (type) {
 			case 'variable':
 				for (const declarator of node.declarations) {
@@ -89,7 +89,7 @@ export default function () {
 					this,
 				);
 
-				this.script.ast_result.push(
+				ast_hoisted.push(
 					t.variableDeclaration(
 						'const',
 						[
@@ -163,6 +163,10 @@ export default function () {
 			// no default
 		}
 	}
+
+	this.script.ast_result.unshift(
+		...ast_hoisted,
+	);
 }
 
 const UNSUPPORTED_DECLARATOR_ID_TYPES = new Set([
@@ -186,16 +190,12 @@ function processVariableDeclarator(_this, kind, node) {
 
 		_this.script.ast_constructor.push(
 			t.expressionStatement(
-				t.assignmentExpression(
-					'=',
+				t.callExpression(
 					t.memberExpression(
-						t.memberExpression(
-							t.thisExpression(),
-							t.identifier('_copper'),
-						),
-						t.identifier('propsValidators'),
+						t.thisExpression(),
+						t.identifier('defineProps'),
 					),
-					node.init.arguments[0],
+					node.init.arguments,
 				),
 			),
 		);
@@ -226,10 +226,7 @@ function processVariableDeclarator(_this, kind, node) {
 							t.identifier(prop_variable),
 							t.memberExpression(
 								t.memberExpression(
-									t.memberExpression(
-										t.thisExpression(),
-										t.identifier('_copper'),
-									),
+									t.thisExpression(),
 									t.identifier('props'),
 								),
 								t.identifier(prop_name),

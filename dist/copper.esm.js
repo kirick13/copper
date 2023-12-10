@@ -2213,7 +2213,6 @@ if (true) {
 // src/browser/copper-state.js
 class CopperState {
   element;
-  props = {};
   #watchers = [];
   constructor(element) {
     this.element = element;
@@ -2552,23 +2551,10 @@ function reactiveInputValue(element3, watcher, setter) {
 }
 // src/browser/reactive/prop.js
 function reactiveProp(element3, ...args) {
-  const copperState = element3._copper;
   for (let index = 0;index < args.length; index += 2) {
-    const key = args[index];
+    const prop_name = args[index];
     const watcher = args[index + 1];
-    const prop = ref();
-    const validator = copperState.propsValidators?.[key];
-    const is_validator_function = typeof validator === "function";
-    copperState.watch(watcher, (value) => {
-      if (is_validator_function && validator(value) !== true) {
-        console.error(`Invalid value for property ${key} on component`, element3);
-      } else {
-        prop.value = value;
-      }
-    }, {
-      immediate: true
-    });
-    copperState.props[key] = readonly(prop);
+    element3.bindProp(prop_name, watcher);
   }
   return element3;
 }
@@ -2626,6 +2612,7 @@ var attachCss = function(name, css) {
   style.textContent = css;
   document.head.append(style);
 };
+var SYMBOL_NO_VALUE = Symbol("NO_VALUE");
 
 class CopperElement extends HTMLElement {
   root;
@@ -2660,6 +2647,51 @@ class CopperElement extends HTMLElement {
       console.error(error);
     }
   }
+  props = {};
+  #props_data = new Map;
+  defineProps(options) {
+    for (const [prop_name, validator] of Object.entries(options)) {
+      let prop_value = SYMBOL_NO_VALUE;
+      if (this.hasAttribute(prop_name)) {
+        prop_value = this.getAttribute(prop_name);
+      } else if (this.hasAttribute(`${prop_name}.number`)) {
+        prop_value = Number.parseFloat(this.getAttribute(`${prop_name}.number`));
+      } else if (this.hasAttribute(`${prop_name}.boolean`)) {
+        const attribute_value = this.getAttribute(`${prop_name}.boolean`);
+        prop_value = attribute_value === "true" || attribute_value === "1";
+      }
+      const is_validator_function = typeof validator === "function";
+      if (prop_value !== SYMBOL_NO_VALUE && is_validator_function && validator(prop_value) !== true) {
+        throw new InvalidPropertyValueError(this, prop_name, prop_value);
+      }
+      const prop_ref = ref(prop_value);
+      this.#props_data.set(prop_name, {
+        prop_ref,
+        validator,
+        is_validator_function
+      });
+      this.props[prop_name] = readonly(prop_ref);
+    }
+  }
+  bindProp(prop_name, watcher) {
+    if (this.#props_data.has(prop_name) !== true) {
+      console.warn(`Property "${prop_name}" is not defined by component ${this.constructor.name}, so it cannot be passed to it.`);
+      return;
+    }
+    const {
+      prop_ref,
+      validator,
+      is_validator_function
+    } = this.#props_data.get(prop_name);
+    this._copper.watch(watcher, (value) => {
+      if (is_validator_function && validator(value) !== true) {
+        throw new InvalidPropertyValueError(this, prop_name, value);
+      }
+      prop_ref.value = value;
+    }, {
+      immediate: true
+    });
+  }
   render(...elements) {
     this.root.append(...elements);
   }
@@ -2688,6 +2720,14 @@ class CopperElement extends HTMLElement {
     this.dispatchEvent(new CustomEvent(`copper:${event_name}`, {
       detail: value
     }));
+  }
+}
+
+class InvalidPropertyValueError extends TypeError {
+  constructor(element3, prop_name, value) {
+    console.error("InvalidPropertyValueError happened on", element3);
+    super(`Invalid value for property "${prop_name}" on component ${element3.constructor.name}, got "${value}" of type ${typeof value}`);
+    this.name = "InvalidPropertyValueError";
   }
 }
 export {
