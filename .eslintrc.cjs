@@ -23,6 +23,10 @@ module.exports = {
 		'promise',
 		'unicorn',
 	],
+	ignorePatterns: [
+		'dist/',
+		'test/**/dist/',
+	],
 	settings: {
 		'import/ignore': [
 			'vue',

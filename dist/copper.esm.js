@@ -483,7 +483,7 @@ var createInstrumentationGetter = function(isReadonly, shallow) {
     } else if (key === "__v_raw") {
       return target;
     }
-    return Reflect.get(hasOwn(instrumentations, key) && (key in target) ? instrumentations : target, key, receiver);
+    return Reflect.get(hasOwn(instrumentations, key) && key in target ? instrumentations : target, key, receiver);
   };
 };
 var checkIdentityKeys = function(target, has2, key) {
@@ -1669,7 +1669,7 @@ var inject = function(key, defaultValue, treatDefaultAsFactory = false) {
   const instance = currentInstance || currentRenderingInstance;
   if (instance || currentApp) {
     const provides = instance ? instance.parent == null ? instance.vnode.appContext && instance.vnode.appContext.provides : instance.parent.provides : currentApp._context.provides;
-    if (provides && (key in provides)) {
+    if (provides && key in provides) {
       return provides[key];
     } else if (arguments.length > 1) {
       return treatDefaultAsFactory && isFunction(defaultValue) ? defaultValue.call(instance && instance.proxy) : defaultValue;
@@ -1694,7 +1694,7 @@ var getExposeProxy = function(instance) {
         }
       },
       has(target, key) {
-        return (key in target) || (key in publicPropertiesMap);
+        return key in target || key in publicPropertiesMap;
       }
     }));
   }
@@ -1723,7 +1723,7 @@ var formatComponentName = function(instance, Component, isRoot = false) {
   return name ? classify(name) : isRoot ? `App` : `Anonymous`;
 };
 var isClassComponent = function(value) {
-  return isFunction(value) && ("__vccOpts" in value);
+  return isFunction(value) && "__vccOpts" in value;
 };
 var isShallow2 = function(value) {
   return !!(value && value["__v_isShallow"]);
@@ -1878,7 +1878,7 @@ var initCustomFormatter = function() {
   }
   function isKeyOfType(Comp, key, type) {
     const opts = Comp[type];
-    if (isArray(opts) && opts.includes(key) || isObject(opts) && (key in opts)) {
+    if (isArray(opts) && opts.includes(key) || isObject(opts) && key in opts) {
       return true;
     }
     if (Comp.extends && isKeyOfType(Comp.extends, key, type)) {
@@ -2087,7 +2087,7 @@ var PublicInstanceProxyHandlers = {
       warn2(`Attempting to mutate prop "${key}". Props are readonly.`);
       return false;
     }
-    if (key[0] === "$" && (key.slice(1) in instance)) {
+    if (key[0] === "$" && key.slice(1) in instance) {
       warn2(`Attempting to mutate public property "${key}". Properties starting with \$ are reserved and readonly.`);
       return false;
     } else {
@@ -2664,7 +2664,7 @@ class CopperElement extends HTMLElement {
       if (prop_value !== SYMBOL_NO_VALUE && is_validator_function && validator(prop_value) !== true) {
         throw new InvalidPropertyValueError(this, prop_name, prop_value);
       }
-      const prop_ref = ref(prop_value);
+      const prop_ref = ref(prop_value === SYMBOL_NO_VALUE ? undefined : prop_value);
       this.#props_data.set(prop_name, {
         prop_ref,
         validator,

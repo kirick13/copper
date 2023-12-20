@@ -93,7 +93,11 @@ export class CopperElement extends HTMLElement {
 				);
 			}
 
-			const prop_ref = ref(prop_value);
+			const prop_ref = ref(
+				prop_value === SYMBOL_NO_VALUE
+					? undefined
+					: prop_value,
+			);
 
 			this.#props_data.set(
 				prop_name,

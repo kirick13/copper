@@ -3,7 +3,7 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"version": "0.1.9-beta.9",
+	"version": "0.1.9-beta.10",
 	"description": "Lightweight reactive UI library for building web interfaces with Web Components",
 	"main": "src/main.js",
 	"type": "module",
@@ -34,7 +34,8 @@
 		"build": "bun run build-esm",
 		"build-esm": "bun run build-esm-full && bun run build-esm-minified",
 		"build-esm-full": "bun build --outfile dist/copper.esm.js --target browser src/main.js",
-		"build-esm-minified": "bun build --outfile dist/copper.esm.min.js --target browser --minify src/main.js"
+		"build-esm-minified": "bun build --outfile dist/copper.esm.min.js --target browser --minify src/main.js",
+		"npm-publish": "bun run build && bunx eslint . && npm publish --tag beta"
 	},
 	"repository": {
 		"type": "git",
